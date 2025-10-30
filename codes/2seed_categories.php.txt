@@ -1,0 +1,60 @@
+<?php
+
+namespace Database\Seeders;
+
+use App\Models\Category;
+use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use Illuminate\Database\Seeder;
+
+class CategorySeeder extends Seeder
+{
+    public function run()
+    {
+        $categories = [
+            [
+                'category_name' => 'Elektronik',
+                'description' => 'Produk elektronik dan gadget',
+                'parent_category_id' => null,
+            ],
+            [
+                'category_name' => 'Smartphone',
+                'description' => 'Ponsel pintar dan aksesoris',
+                'parent_category_id' => 1, // Anak dari Elektronik
+            ],
+            [
+                'category_name' => 'Laptop',
+                'description' => 'Laptop dan komputer',
+                'parent_category_id' => 1, // Anak dari Elektronik
+            ],
+            [
+                'category_name' => 'Fashion',
+                'description' => 'Pakaian dan aksesoris fashion',
+                'parent_category_id' => null,
+            ],
+            [
+                'category_name' => 'Pakaian Pria',
+                'description' => 'Pakaian untuk pria',
+                'parent_category_id' => 4, // Anak dari Fashion
+            ],
+            [
+                'category_name' => 'Pakaian Wanita',
+                'description' => 'Pakaian untuk wanita',
+                'parent_category_id' => 4, // Anak dari Fashion
+            ],
+            [
+                'category_name' => 'Home & Living',
+                'description' => 'Produk untuk rumah dan kehidupan',
+                'parent_category_id' => null,
+            ],
+            [
+                'category_name' => 'Dapur',
+                'description' => 'Peralatan dapur',
+                'parent_category_id' => 7, // Anak dari Home & Living
+            ],
+        ];
+
+        foreach ($categories as $category) {
+            Category::create($category);
+        }
+    }
+}

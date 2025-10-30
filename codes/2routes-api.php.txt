@@ -1,0 +1,75 @@
+<?php
+
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\ProductController;
+use App\Http\Controllers\CartController;
+use App\Http\Controllers\OrderController;
+use App\Http\Controllers\PaymentController;
+
+/*
+|--------------------------------------------------------------------------
+| API Routes
+|--------------------------------------------------------------------------
+|
+| Here is where you can register API routes for your application. These
+| routes are loaded by the RouteServiceProvider and all of them will
+| be assigned to the "api" middleware group. Make something great!
+|
+*/
+
+Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
+    return $request->user();
+});
+
+// Product Routes
+Route::prefix('products')->group(function () {
+    // GET /api/products - Get all products with filters
+    Route::get('/', [ProductController::class, 'index']);
+    
+    // GET /api/products/featured - Get featured products
+    Route::get('/featured', [ProductController::class, 'featured']);
+    
+    // GET /api/products/search - Search products
+    Route::get('/search', [ProductController::class, 'search']);
+    
+    // GET /api/products/{id} - Get single product detail
+    Route::get('/{id}', [ProductController::class, 'show']);
+});
+
+// Category Products Routes
+Route::prefix('categories')->group(function () {
+    // GET /api/categories/{id}/products - Get products by category
+    Route::get('/{id}/products', [ProductController::class, 'getByCategory']);
+});
+
+// Cart Routes
+Route::prefix('cart')->group(function () {
+    Route::get('/{userId}', [CartController::class, 'getCart']);
+    Route::get('/{userId}/summary', [CartController::class, 'getCartSummary']);
+    Route::post('/{userId}/add', [CartController::class, 'addToCart']);
+    Route::put('/{userId}/update', [CartController::class, 'updateCartItem']);
+    Route::delete('/{userId}/remove', [CartController::class, 'removeFromCart']);
+    Route::delete('/{userId}/clear', [CartController::class, 'clearCart']);
+});
+
+// Payment Routes  
+Route::prefix('payments')->group(function () {
+    Route::post('/', [PaymentController::class, 'createPayment']);
+    Route::get('/{id}', [PaymentController::class, 'getPayment']);
+    Route::post('/{id}/status', [PaymentController::class, 'updatePaymentStatus']);
+    Route::get('/order/{orderId}', [PaymentController::class, 'getOrderPayments']);
+    Route::get('/user/{userId}', [PaymentController::class, 'getUserPayments']);
+});
+
+// Order Routes
+Route::prefix('orders')->group(function () {
+    Route::post('/', [OrderController::class, 'createOrder']);
+    Route::get('/user/{userId}', [OrderController::class, 'getUserOrders']);
+    Route::get('/{id}', [OrderController::class, 'getOrder']);
+    Route::put('/{id}/status', [OrderController::class, 'updateOrderStatus']);
+    Route::put('/{id}/cancel', [OrderController::class, 'cancelOrder']);
+    Route::get('/{id}/track', [OrderController::class, 'trackOrder']);
+    Route::get('/user/{userId}/stats', [OrderController::class, 'getUserOrderStats']);
+    Route::get('/recent/orders', [OrderController::class, 'getRecentOrders']);
+});

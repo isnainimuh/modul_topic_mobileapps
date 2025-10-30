@@ -1,0 +1,225 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Payment;
+use App\Models\Order;
+use App\Models\Product;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+
+class PaymentController extends Controller
+{
+    /**
+     * Create payment for order
+     */
+    public function createPayment(Request $request)
+    {
+        try {
+            DB::beginTransaction();
+
+            $request->validate([
+                'order_id' => 'required|exists:orders,order_id',
+                'method' => 'required|in:bank_transfer,credit_card,e-wallet'
+            ]);
+
+            $order = Order::with('items')->find($request->order_id);
+
+            if ($order->status !== 'pending') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Order cannot be paid'
+                ], 400);
+            }
+
+            // Check if payment already exists
+            $existingPayment = Payment::where('order_id', $request->order_id)->first();
+            if ($existingPayment) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Payment already exists for this order'
+                ], 400);
+            }
+
+            // Create payment
+            $payment = Payment::create([
+                'order_id' => $request->order_id,
+                'method' => $request->method,
+                'amount' => $order->total_amount,
+                'status' => 'pending'
+            ]);
+
+            // For demo, auto confirm payment
+            // In real app, this would be handled by payment gateway
+            $payment->status = 'success';
+            $payment->payment_date = now();
+            $payment->save();
+
+            // Update order status
+            $order->status = 'paid';
+            $order->save();
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'data' => $payment->load('order.items.product'),
+                'message' => 'Payment created and confirmed successfully'
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to create payment',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get payment details
+     */
+    public function getPayment($paymentId)
+    {
+        try {
+            $payment = Payment::with(['order.items.product.images'])->find($paymentId);
+
+            if (!$payment) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Payment not found'
+                ], 404);
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $payment,
+                'message' => 'Payment retrieved successfully'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve payment',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Update payment status (for webhook)
+     */
+    public function updatePaymentStatus(Request $request, $paymentId)
+    {
+        try {
+            DB::beginTransaction();
+
+            $request->validate([
+                'status' => 'required|in:pending,success,failed,expired'
+            ]);
+
+            $payment = Payment::with('order.items')->find($paymentId);
+
+            if (!$payment) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Payment not found'
+                ], 404);
+            }
+
+            $oldStatus = $payment->status;
+            $payment->status = $request->status;
+            
+            if ($request->status === 'success') {
+                $payment->payment_date = now();
+            }
+            
+            $payment->save();
+
+            // Update order status based on payment status
+            $order = $payment->order;
+            if ($request->status === 'success') {
+                $order->status = 'paid';
+            } elseif (in_array($request->status, ['failed', 'expired']) && $oldStatus === 'success') {
+                $order->status = 'pending';
+                // Restore product stock if payment failed after being successful
+                foreach ($order->items as $item) {
+                    $product = Product::find($item->product_id);
+                    $product->stock_quantity += $item->quantity;
+                    $product->save();
+                }
+            }
+            $order->save();
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'data' => $payment->load('order'),
+                'message' => 'Payment status updated successfully'
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update payment status',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get payments by order
+     */
+    public function getOrderPayments($orderId)
+    {
+        try {
+            $payments = Payment::where('order_id', $orderId)
+                      ->orderBy('created_at', 'desc')
+                      ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $payments,
+                'message' => 'Payments retrieved successfully'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve payments',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get user payment history
+     */
+    public function getUserPayments($userId)
+    {
+        try {
+            $payments = Payment::with(['order.items.product.images'])
+                      ->whereHas('order', function ($query) use ($userId) {
+                          $query->where('user_id', $userId);
+                      })
+                      ->orderBy('created_at', 'desc')
+                      ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $payments,
+                'message' => 'User payments retrieved successfully'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve user payments',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+}

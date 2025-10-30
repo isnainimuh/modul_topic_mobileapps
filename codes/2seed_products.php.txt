@@ -1,0 +1,133 @@
+<?php
+
+namespace Database\Seeders;
+
+use App\Models\Product;
+use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use Illuminate\Database\Seeder;
+
+class ProductSeeder extends Seeder
+{
+    public function run()
+    {
+        $products = [
+            // Smartphones
+            [
+                'category_id' => 2, // Smartphone
+                'product_name' => 'iPhone 15 Pro',
+                'description' => 'iPhone 15 Pro dengan chip A17 Pro, kamera 48MP, dan titanium body.',
+                'price' => 18999000,
+                'stock_quantity' => 50,
+                'is_active' => true,
+            ],
+            [
+                'category_id' => 2, // Smartphone
+                'product_name' => 'Samsung Galaxy S24 Ultra',
+                'description' => 'Samsung flagship dengan S Pen, kamera 200MP, dan AI features.',
+                'price' => 15999000,
+                'stock_quantity' => 30,
+                'is_active' => true,
+            ],
+            [
+                'category_id' => 2, // Smartphone
+                'product_name' => 'Xiaomi Redmi Note 13',
+                'description' => 'Smartphone budget dengan performa tangguh dan baterai tahan lama.',
+                'price' => 3499000,
+                'stock_quantity' => 100,
+                'is_active' => true,
+            ],
+            [
+                'category_id' => 2, // Smartphone
+                'product_name' => 'Google Pixel 8 Pro',
+                'description' => 'Pixel dengan kamera terbaik dan pure Android experience.',
+                'price' => 12999000,
+                'stock_quantity' => 20,
+                'is_active' => true,
+            ],
+
+            // Laptops
+            [
+                'category_id' => 3, // Laptop
+                'product_name' => 'MacBook Pro 14" M3',
+                'description' => 'Laptop profesional dengan chip M3, layar Liquid Retina XDR.',
+                'price' => 27999000,
+                'stock_quantity' => 15,
+                'is_active' => true,
+            ],
+            [
+                'category_id' => 3, // Laptop
+                'product_name' => 'Dell XPS 13',
+                'description' => 'Laptop ultrabook dengan desain infinity edge display.',
+                'price' => 18999000,
+                'stock_quantity' => 25,
+                'is_active' => true,
+            ],
+            [
+                'category_id' => 3, // Laptop
+                'product_name' => 'ASUS ROG Zephyrus',
+                'description' => 'Gaming laptop dengan RTX 4060 dan processor Intel i9.',
+                'price' => 32999000,
+                'stock_quantity' => 10,
+                'is_active' => true,
+            ],
+
+            // Fashion - Pakaian Pria
+            [
+                'category_id' => 5, // Pakaian Pria
+                'product_name' => 'Kemeja Formal Pria Lengan Panjang',
+                'description' => 'Kemeja formal bahan katun premium untuk kantor dan acara formal.',
+                'price' => 299000,
+                'stock_quantity' => 80,
+                'is_active' => true,
+            ],
+            [
+                'category_id' => 5, // Pakaian Pria
+                'product_name' => 'Celana Chino Pria',
+                'description' => 'Celana chino casual dengan berbagai pilihan warna.',
+                'price' => 249000,
+                'stock_quantity' => 60,
+                'is_active' => true,
+            ],
+
+            // Fashion - Pakaian Wanita
+            [
+                'category_id' => 6, // Pakaian Wanita
+                'product_name' => 'Dress Wanita Elegant',
+                'description' => 'Dress wanita elegant untuk pesta dan acara formal.',
+                'price' => 459000,
+                'stock_quantity' => 40,
+                'is_active' => true,
+            ],
+            [
+                'category_id' => 6, // Pakaian Wanita
+                'product_name' => 'Blouse Wanita Casual',
+                'description' => 'Blouse casual bahan rayon yang nyaman dipakai sehari-hari.',
+                'price' => 189000,
+                'stock_quantity' => 70,
+                'is_active' => true,
+            ],
+
+            // Home & Living - Dapur
+            [
+                'category_id' => 8, // Dapur
+                'product_name' => 'Set Panci Stainless Steel 5pcs',
+                'description' => 'Set panci lengkap untuk kebutuhan masak sehari-hari.',
+                'price' => 899000,
+                'stock_quantity' => 35,
+                'is_active' => true,
+            ],
+            [
+                'category_id' => 8, // Dapur
+                'product_name' => 'Mixer Digital Philips',
+                'description' => 'Mixer digital dengan 5 speed untuk membuat kue dan roti.',
+                'price' => 659000,
+                'stock_quantity' => 20,
+                'is_active' => true,
+            ],
+        ];
+
+        foreach ($products as $product) {
+            Product::create($product);
+        }
+    }
+}

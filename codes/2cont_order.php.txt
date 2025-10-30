@@ -1,0 +1,485 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Order;
+use App\Models\OrderItem;
+use App\Models\Cart;
+use App\Models\CartItem;
+use App\Models\Product;
+use App\Models\Payment;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+
+class OrderController extends Controller
+{
+    /**
+     * Create order from cart
+     */
+    public function createOrder(Request $request)
+    {
+        try {
+            DB::beginTransaction();
+
+            $request->validate([
+                'user_id' => 'required|exists:users,user_id',
+                'shipping_address' => 'required|string|min:10'
+            ]);
+
+            // Get user cart with items
+            $cart = Cart::with(['items.product'])
+                    ->where('user_id', $request->user_id)
+                    ->first();
+
+            if (!$cart || $cart->items->isEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Cart is empty'
+                ], 400);
+            }
+
+            // Validate stock and calculate total
+            $totalAmount = 0;
+            $orderItems = [];
+
+            foreach ($cart->items as $cartItem) {
+                $product = $cartItem->product;
+                
+                // Check stock availability
+                if ($product->stock_quantity < $cartItem->quantity) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => "Insufficient stock for {$product->product_name}. Available: {$product->stock_quantity}, Requested: {$cartItem->quantity}"
+                    ], 400);
+                }
+
+                $itemTotal = $cartItem->quantity * $product->price;
+                $totalAmount += $itemTotal;
+
+                $orderItems[] = [
+                    'product_id' => $product->product_id,
+                    'quantity' => $cartItem->quantity,
+                    'price_at_time' => $product->price,
+                    'item_total' => $itemTotal
+                ];
+            }
+
+            // Add shipping cost (contoh: 10% dari total, minimum 10k)
+            $shippingCost = max(10000, $totalAmount * 0.1);
+            $finalTotal = $totalAmount + $shippingCost;
+
+            // Create order
+            $order = Order::create([
+                'user_id' => $request->user_id,
+                'status' => 'pending',
+                'total_amount' => $finalTotal,
+                'shipping_cost' => $shippingCost,
+                'shipping_address' => $request->shipping_address
+            ]);
+
+            // Create order items and update product stock
+            foreach ($orderItems as $item) {
+                OrderItem::create([
+                    'order_id' => $order->order_id,
+                    'product_id' => $item['product_id'],
+                    'quantity' => $item['quantity'],
+                    'price_at_time' => $item['price_at_time']
+                ]);
+
+                // Update product stock
+                $product = Product::find($item['product_id']);
+                $product->stock_quantity -= $item['quantity'];
+                $product->save();
+            }
+
+            // Clear cart
+            CartItem::where('cart_id', $cart->cart_id)->delete();
+
+            DB::commit();
+
+            // Load order with relationships
+            $order->load(['items.product.images', 'user']);
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'order' => $order,
+                    'order_id' => $order->order_id,
+                    'summary' => [
+                        'subtotal' => $totalAmount,
+                        'shipping_cost' => $shippingCost,
+                        'total_amount' => $finalTotal,
+                        'total_items' => count($orderItems)
+                    ]
+                ],
+                'message' => 'Order created successfully'
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to create order',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get user orders
+     */
+    public function getUserOrders($userId)
+    {
+        try {
+            $orders = Order::with(['items.product.images', 'payment'])
+                      ->where('user_id', $userId)
+                      ->orderBy('created_at', 'desc')
+                      ->paginate(10);
+
+            return response()->json([
+                'success' => true,
+                'data' => $orders,
+                'message' => 'User orders retrieved successfully'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve user orders',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get order details
+     */
+    public function getOrder($orderId)
+    {
+        try {
+            $order = Order::with([
+                'user',
+                'items.product.images',
+                'payment'
+            ])->find($orderId);
+
+            if (!$order) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Order not found'
+                ], 404);
+            }
+
+            // Calculate order summary
+            $subtotal = 0;
+            foreach ($order->items as $item) {
+                $subtotal += $item->quantity * $item->price_at_time;
+            }
+
+            $order->subtotal = $subtotal;
+
+            return response()->json([
+                'success' => true,
+                'data' => $order,
+                'message' => 'Order retrieved successfully'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve order',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Update order status
+     */
+    public function updateOrderStatus(Request $request, $orderId)
+    {
+        try {
+            DB::beginTransaction();
+
+            $request->validate([
+                'status' => 'required|in:pending,paid,shipped,delivered,cancelled'
+            ]);
+
+            $order = Order::with('items.product')->find($orderId);
+
+            if (!$order) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Order not found'
+                ], 404);
+            }
+
+            $oldStatus = $order->status;
+            $order->status = $request->status;
+            $order->save();
+
+            // If order is cancelled, restore product stock
+            if ($request->status === 'cancelled' && $oldStatus !== 'cancelled') {
+                foreach ($order->items as $item) {
+                    $product = Product::find($item->product_id);
+                    $product->stock_quantity += $item->quantity;
+                    $product->save();
+                }
+
+                // Also cancel any pending payments
+                Payment::where('order_id', $orderId)
+                      ->where('status', 'pending')
+                      ->update(['status' => 'failed']);
+            }
+
+            // If order is shipped, update shipped_at timestamp
+            if ($request->status === 'shipped') {
+                $order->shipped_at = now();
+                $order->save();
+            }
+
+            // If order is delivered, update delivered_at timestamp
+            if ($request->status === 'delivered') {
+                $order->delivered_at = now();
+                $order->save();
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'data' => $order->load(['items.product.images', 'payment']),
+                'message' => 'Order status updated successfully'
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update order status',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Cancel order
+     */
+    public function cancelOrder($orderId)
+    {
+        try {
+            DB::beginTransaction();
+
+            $order = Order::with('items.product')->find($orderId);
+
+            if (!$order) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Order not found'
+                ], 404);
+            }
+
+            // Check if order can be cancelled
+            if (!in_array($order->status, ['pending', 'paid'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Order cannot be cancelled in its current status'
+                ], 400);
+            }
+
+            $order->status = 'cancelled';
+            $order->save();
+
+            // Restore product stock
+            foreach ($order->items as $item) {
+                $product = Product::find($item->product_id);
+                $product->stock_quantity += $item->quantity;
+                $product->save();
+            }
+
+            // Cancel any payments
+            Payment::where('order_id', $orderId)
+                  ->where('status', 'pending')
+                  ->update(['status' => 'failed']);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'data' => $order->load(['items.product.images', 'payment']),
+                'message' => 'Order cancelled successfully'
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to cancel order',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get order statistics for user
+     */
+    public function getUserOrderStats($userId)
+    {
+        try {
+            $stats = [
+                'total_orders' => Order::where('user_id', $userId)->count(),
+                'pending_orders' => Order::where('user_id', $userId)
+                                ->where('status', 'pending')
+                                ->count(),
+                'paid_orders' => Order::where('user_id', $userId)
+                              ->where('status', 'paid')
+                              ->count(),
+                'shipped_orders' => Order::where('user_id', $userId)
+                                ->where('status', 'shipped')
+                                ->count(),
+                'delivered_orders' => Order::where('user_id', $userId)
+                                  ->where('status', 'delivered')
+                                  ->count(),
+                'cancelled_orders' => Order::where('user_id', $userId)
+                                  ->where('status', 'cancelled')
+                                  ->count(),
+                'total_spent' => Order::where('user_id', $userId)
+                              ->where('status', '!=', 'cancelled')
+                              ->sum('total_amount')
+            ];
+
+            return response()->json([
+                'success' => true,
+                'data' => $stats,
+                'message' => 'User order statistics retrieved successfully'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve order statistics',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get recent orders (for admin/dashboard)
+     */
+    public function getRecentOrders(Request $request)
+    {
+        try {
+            $limit = $request->get('limit', 10);
+            
+            $orders = Order::with(['user', 'items.product', 'payment'])
+                      ->orderBy('created_at', 'desc')
+                      ->limit($limit)
+                      ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $orders,
+                'message' => 'Recent orders retrieved successfully'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve recent orders',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Track order status
+     */
+    public function trackOrder($orderId)
+    {
+        try {
+            $order = Order::with(['items.product.images'])
+                     ->find($orderId);
+
+            if (!$order) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Order not found'
+                ], 404);
+            }
+
+            // Simulate tracking info based on order status
+            $trackingInfo = $this->generateTrackingInfo($order);
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'order' => $order,
+                    'tracking' => $trackingInfo
+                ],
+                'message' => 'Order tracking information retrieved successfully'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to track order',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Generate tracking information based on order status
+     */
+    private function generateTrackingInfo($order)
+    {
+        $statusFlow = [
+            'pending' => ['icon' => '📦', 'description' => 'Menunggu konfirmasi pembayaran', 'completed' => false],
+            'paid' => ['icon' => '💰', 'description' => 'Pembayaran diterima', 'completed' => false],
+            'shipped' => ['icon' => '🚚', 'description' => 'Pesanan dikirim', 'completed' => false],
+            'delivered' => ['icon' => '✅', 'description' => 'Pesanan diterima', 'completed' => false],
+            'cancelled' => ['icon' => '❌', 'description' => 'Pesanan dibatalkan', 'completed' => true]
+        ];
+
+        $currentStatus = $order->status;
+        $trackingSteps = [];
+
+        foreach ($statusFlow as $status => $info) {
+            $step = [
+                'status' => $status,
+                'icon' => $info['icon'],
+                'description' => $info['description'],
+                'completed' => $status === $currentStatus ? true : 
+                             (array_search($status, array_keys($statusFlow)) < array_search($currentStatus, array_keys($statusFlow))),
+                'current' => $status === $currentStatus
+            ];
+
+            // Add timestamps for completed steps
+            if ($step['completed']) {
+                switch ($status) {
+                    case 'paid':
+                        $step['timestamp'] = $order->payment?->payment_date ?? $order->updated_at;
+                        break;
+                    case 'shipped':
+                        $step['timestamp'] = $order->shipped_at ?? $order->updated_at;
+                        break;
+                    case 'delivered':
+                        $step['timestamp'] = $order->delivered_at ?? $order->updated_at;
+                        break;
+                    default:
+                        $step['timestamp'] = $order->updated_at;
+                }
+            }
+
+            $trackingSteps[] = $step;
+        }
+
+        return [
+            'current_status' => $currentStatus,
+            'steps' => $trackingSteps,
+            'estimated_delivery' => $order->shipped_at ? 
+                $order->shipped_at->addDays(3)->format('Y-m-d') : 
+                null
+        ];
+    }
+}

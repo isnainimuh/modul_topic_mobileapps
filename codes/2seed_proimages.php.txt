@@ -1,0 +1,61 @@
+<?php
+
+namespace Database\Seeders;
+
+use App\Models\ProductImage;
+use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use Illuminate\Database\Seeder;
+
+class ProductImageSeeder extends Seeder
+{
+    public function run()
+    {
+        $productImages = [
+            // iPhone 15 Pro
+            ['product_id' => 1, 'image_url' => 'https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=500', 'sort_order' => 1],
+            ['product_id' => 1, 'image_url' => 'https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=500', 'sort_order' => 2],
+            
+            // Samsung Galaxy S24 Ultra
+            ['product_id' => 2, 'image_url' => 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=500', 'sort_order' => 1],
+            ['product_id' => 2, 'image_url' => 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=500', 'sort_order' => 2],
+            
+            // Xiaomi Redmi Note 13
+            ['product_id' => 3, 'image_url' => 'https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=500', 'sort_order' => 1],
+            
+            // Google Pixel 8 Pro
+            ['product_id' => 4, 'image_url' => 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=500', 'sort_order' => 1],
+            
+            // MacBook Pro
+            ['product_id' => 5, 'image_url' => 'https://images.unsplash.com/photo-1541807084-5c52b6b3adef?w=500', 'sort_order' => 1],
+            ['product_id' => 5, 'image_url' => 'https://images.unsplash.com/photo-1541807084-5c52b6b3adef?w=500', 'sort_order' => 2],
+            
+            // Dell XPS 13
+            ['product_id' => 6, 'image_url' => 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=500', 'sort_order' => 1],
+            
+            // ASUS ROG Zephyrus
+            ['product_id' => 7, 'image_url' => 'https://images.unsplash.com/photo-1603302576837-37561b2e2302?w=500', 'sort_order' => 1],
+            
+            // Kemeja Pria
+            ['product_id' => 8, 'image_url' => 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=500', 'sort_order' => 1],
+            
+            // Celana Chino
+            ['product_id' => 9, 'image_url' => 'https://images.unsplash.com/photo-1542272604-787c3835535d?w=500', 'sort_order' => 1],
+            
+            // Dress Wanita
+            ['product_id' => 10, 'image_url' => 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=500', 'sort_order' => 1],
+            
+            // Blouse Wanita
+            ['product_id' => 11, 'image_url' => 'https://images.unsplash.com/photo-1485231183945-fffde7cb39ef?w=500', 'sort_order' => 1],
+            
+            // Set Panci
+            ['product_id' => 12, 'image_url' => 'https://images.unsplash.com/photo-1584568692434-47479fde0d9a?w=500', 'sort_order' => 1],
+            
+            // Mixer Digital
+            ['product_id' => 13, 'image_url' => 'https://images.unsplash.com/photo-1571330735066-03aaa9429d89?w=500', 'sort_order' => 1],
+        ];
+
+        foreach ($productImages as $image) {
+            ProductImage::create($image);
+        }
+    }
+}
