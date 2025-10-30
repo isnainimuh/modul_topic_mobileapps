@@ -3,32 +3,480 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bab 1 - Pengenalan AI</title>
+  <title>Target Week 1 - Setup Lingkungan Pengembangan, Membuat file Migration dan Model</title>
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs/themes/prism.css">
 </head>
 <body>
   <header>
-    <h1>Bab 1: Pengenalan Kecerdasan Buatan</h1>
+    <h1>Target Week 1 - Setup Lingkungan Pengembangan, Membuat file Migration dan Model</h1>
     <nav>
-      <a href="index.html">🏠 Daftar Bab</a> |
-      <a href="bab2.html">➡️ Bab Berikutnya</a>
+      <a href="index.html">🏠 Daftar Materi</a> |
+      <a href="bab2.html">➡️ Target Berikutnya</a>
     </nav>
   </header>
 
   <main>
-    <h2>Pengantar</h2>
-    <p>Kecerdasan Buatan (AI) adalah cabang ilmu komputer yang berfokus pada pembuatan sistem
-       yang dapat berpikir dan belajar seperti manusia.</p>
-
-    <h3>Contoh Program Python</h3>
+    <h2>Step 1. Buat project backend Laravel</h2>
+    <p>Langkah awal pengembangan project mobile, kita setup dulu lingkungan pengembangan
+      dari sisi backend. Kita akan membuat backend menggunakan framework Laravel seperti
+      materi pada semester sebelumnya. Start All service Laragon dan buka terminal Laragon.
+    </p>
+    <h3>Membuat Project Backend Laravel</h3>
     <div class="code-block">
       <button class="copy-btn" onclick="copyCode(this)">Copy</button>
       <pre><code class="language-python">
-nama = input("Masukkan nama Anda: ")
-print("Halo,", nama, "! Selamat datang di dunia AI.")
+composer create-project --prefer-dist laravel/laravel:^10.0 backend-ecommerce
       </code></pre>
     </div>
+    <h2>Step 2. Setting database di .env</h2>
+    <p>Selanjutnya pindah direktori ke 'backend-ecommerce' dan 
+      buka project di VS Code dengan mengetikkan 'code .' di terminal, lalu
+      buka file .env
+    </p>
+    <h3>Edit database di .env</h3>
+    <div class="code-block">
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre><code class="language-python">
+DB_DATABASE=ecommerce  
+      </code></pre>
+    </div>
+    <h2>Step 3. Perancangan database aplikasi</h2>
+    <p>Dalam project ini, kita akan membuat ecommerce dengan satu penjual utama. 
+      Susunan tabel yang diperlukan antara lain users, categories, 
+      products, product_images, carts, cart_items, orders, order_items
+      dan payments.  
+    </p>
+    <h3>Tabel users</h3>
+    <p>Berfungsi untuk menyimpan semua data pengguna (pembeli) dengan
+       primary key 'user_id'.</p>
+    <table>
+      <thead>
+        <tr>
+          <th>Field</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Contraints</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>user_id</td>
+          <td>BIGINT</td>
+          <td>ID unik untuk setiap user</td>
+          <td>PRIMARY KEY, AUTO_INCREMENT</td>
+        </tr>
+        <tr>
+          <td>username</td>
+          <td>VARCHAR(50)</td>
+          <td>Nama pengguna yang unik</td>
+          <td>UNIQUE, NOT NULL</td>
+        </tr>
+        <tr>
+          <td>email</td>
+          <td>VARCHAR(100)</td>
+          <td>Alamat email user</td>
+          <td>UNIQUE, NOT NULL</td>
+        </tr>
+        <tr>
+          <td>password_hash</td>
+          <td>VARCHAR(255)</td>
+          <td>Hash password untuk keamanan</td>
+          <td>NOT NULL</td>
+        </tr>
+        <tr>
+          <td>phone_number</td>
+          <td>VARCHAR(20)</td>
+          <td>Nomor telepon user</td>
+          <td>NULLABLE</td>
+        </tr>
+        <tr>
+          <td>created_at</td>
+          <td>DATETIME</td>
+          <td>Timestamp saat user mendaftar</td>
+          <td>DEFAULT CURRENT_TIMESTAMP</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Tabel categories</h3>
+    <p>Berfungsi untuk mengelompokkan produk ke dalam kategori dengan
+       primary key 'category_id'.</p>
+    <table>
+      <thead>
+        <tr>
+          <th>Field</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Contraints</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>category_id</td>
+          <td>INT</td>
+          <td>ID unik untuk kategori</td>
+          <td>PRIMARY KEY, AUTO_INCREMENT</td>
+        </tr>
+        <tr>
+          <td>category_name</td>
+          <td>VARCHAR(50)</td>
+          <td>Nama kategori (contoh: "Elektronik")</td>
+          <td>NOT NULL</td>
+        </tr>
+        <tr>
+          <td>description</td>
+          <td>TEXT</td>
+          <td>Deskripsi kategori</td>
+          <td>NULLABLE</td>
+        </tr>
+        <tr>
+          <td>parent_category_id</td>
+          <td>INT</td>
+          <td>Untuk kategori hierarkis (subkategori)</td>
+          <td>FOREIGN KEY REFERENCES categories(category_id)</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Tabel products</h3>
+    <p>Berfungsi untuk menyimpan semua produk yang dijual dengan
+       primary key 'product_id'.</p>
+    <table>
+      <thead>
+        <tr>
+          <th>Field</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Contraints</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>product_id</td>
+          <td>BIGINT</td>
+          <td>ID unik untuk produk</td>
+          <td>PRIMARY KEY, AUTO_INCREMENT</td>
+        </tr>
+        <tr>
+          <td>category_id</td>
+          <td>INT</td>
+          <td>Kategori produk</td>
+          <td>FOREIGN KEY REFERENCES categories(category_id)</td>
+        </tr>
+        <tr>
+          <td>product_name</td>
+          <td>VARCHAR(200)</td>
+          <td>Nama produk</td>
+          <td>NOT NULL</td>
+        </tr>
+        <tr>
+          <td>description</td>
+          <td>TEXT</td>
+          <td>Deskripsi detail produk</td>
+          <td>NULLABLE</td>
+        </tr>
+         <td>price</td>
+          <td>DECIMAL(10,2)</td>
+          <td>Harga produk</td>
+          <td>NOT NULL, >= 0</td>
+        </tr>
+        <tr>
+          <td>stock_quantity</td>
+          <td>INT</td>
+          <td>Jumlah stok tersedia</td>
+          <td>DEFAULT 0, >= 0</td>
+        </tr>
+        <tr>
+          <td>is_active</td>
+          <td>BOOLEAN</td>
+          <td>Status aktif/non-aktif produk</td>
+          <td>DEFAULT TRUE</td>
+        </tr>
+        <tr>
+          <td>created_at</td>
+          <td>DATETIME</td>
+          <td>Waktu produk ditambahkan</td>
+          <td>DEFAULT CURRENT_TIMESTAMP</td>
+        </tr>
+      </tbody>
+    </table>
+    
+    <h3>Tabel product_images</h3>
+    <p>Berfungsi untuk menyimpan multiple gambar untuk setiap produk dengan
+       primary key 'image_id'.</p>
+    <table>
+      <thead>
+        <tr>
+          <th>Field</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Contraints</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>image_id</td>
+          <td>BIGINT</td>
+          <td>ID unik untuk gambar</td>
+          <td>PRIMARY KEY, AUTO_INCREMENT</td>
+        </tr>
+        <tr>
+          <td>product_id</td>
+          <td>BIGINT</td>
+          <td>Produk yang memiliki gambar ini</td>
+          <td>FOREIGN KEY REFERENCES products(product_id)</td>
+        </tr>
+        <tr>
+          <td>image_url</td>
+          <td>VARCHAR(500)</td>
+          <td>URL/path menuju file gambar</td>
+          <td>NOT NULL</td>
+        </tr>
+        <tr>
+          <td>sort_order</td>
+          <td>INT</td>
+          <td>Urutan tampil gambar (1 = utama)</td>
+          <td>DEFAULT 1</td>
+        </tr>
+      </tbody>
+    </table>
+
+  <h3>Tabel orders</h3>
+    <p>Berfungsi untuk menyimpan data order/pesanan dengan
+       primary key 'order_id'.</p>
+    <table>
+      <thead>
+        <tr>
+          <th>Field</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Contraints</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>order_id</td>
+          <td>BIGINT</td>
+          <td>ID unik order</td>
+          <td>PRIMARY KEY, AUTO_INCREMENT</td>
+        </tr>
+        <tr>
+          <td>user_id</td>
+          <td>BIGINT</td>
+          <td>User yang membuat order</td>
+          <td>FOREIGN KEY REFERENCES users(user_id)</td>
+        </tr>
+        <tr>
+          <td>status</td>
+          <td>ENUM</td>
+          <td>Status order</td>
+          <td>'pending', 'paid', 'shipped', 'delivered', 'cancelled'</td>
+        </tr>
+        <tr>
+          <td>total_amount</td>
+          <td>DECIMAL(10,2)</td>
+          <td>Total harga order</td>
+          <td>NOT NULL, >= 0</td>
+        </tr>
+        <tr>
+          <td>shipping_address</td>
+          <td>TEXT</td>
+          <td>Alamat pengiriman lengkap</td>
+          <td>NOT NULL</td>
+        </tr>
+        <tr>
+          <td>order_date</td>
+          <td>DATETIME</td>
+          <td>Waktu order dibuat</td>
+          <td>DEFAULT CURRENT_TIMESTAMP</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Tabel order_items</h3>
+    <p>Berfungsi untuk menyimpan detail item dalam order dengan
+       primary key 'order_item_id'.</p>
+    <table>
+      <thead>
+        <tr>
+          <th>Field</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Contraints</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>order_item_id</td>
+          <td>BIGINT</td>
+          <td>ID unik item order</td>
+          <td>PRIMARY KEY, AUTO_INCREMENT</td>
+        </tr>
+        <tr>
+          <td>order_id</td>
+          <td>BIGINT</td>
+          <td>Order yang memiliki item ini</td>
+          <td>FOREIGN KEY REFERENCES orders(order_id)</td>
+        </tr>
+        <tr>
+          <td>product_id</td>
+          <td>BIGINT</td>
+          <td>Produk yang dipesan</td>
+          <td>FOREIGN KEY REFERENCES products(product_id)</td>
+        </tr>
+        <tr>
+          <td>quantity</td>
+          <td>INT</td>
+          <td>Jumlah produk dipesan</td>
+          <td>NOT NULL, >= 0</td>
+        </tr>
+        <tr>
+          <td>price_at_time</td>
+          <td>DECIMAL(10,2)</td>
+          <td>Harga produk saat order (snapshot)</td>
+          <td>NOT NULL, >= 0</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Tabel carts</h3>
+    <p>Berfungsi untuk menyimpan keranjang belanja setiap user dengan
+       primary key 'cart_id'.</p>
+    <table>
+      <thead>
+        <tr>
+          <th>Field</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Contraints</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>cart_id</td>
+          <td>BIGINT</td>
+          <td>ID unik keranjang</td>
+          <td>PRIMARY KEY, AUTO_INCREMENT</td>
+        </tr>
+        <tr>
+          <td>user_id</td>
+          <td>BIGINT</td>
+          <td>Pemilik keranjang</td>
+          <td>FOREIGN KEY REFERENCES users(user_id), UNIQUE</td>
+        </tr>
+        <tr>
+          <td>created_at</td>
+          <td>DATETIME</td>
+          <td>Waktu keranjang dibuat</td>
+          <td>DEFAULT CURRENT_TIMESTAMP</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Tabel cart_items</h3>
+    <p>Berfungsi untuk menyimpan item-item dalam keranjang belanja dengan
+       primary key 'cart_item_id'.</p>
+    <table>
+      <thead>
+        <tr>
+          <th>Field</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Contraints</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>cart_item_id</td>
+          <td>BIGINT</td>
+          <td>ID unik item keranjang</td>
+          <td>PRIMARY KEY, AUTO_INCREMENT</td>
+        </tr>
+        <tr>
+          <td>cart_id</td>
+          <td>BIGINT</td>
+          <td>Keranjang yang memiliki item ini</td>
+          <td>FOREIGN KEY REFERENCES carts(cart_id)</td>
+        </tr>
+        <tr>
+          <td>product_id</td>
+          <td>BIGINT</td>
+          <td>Produk yang ditambahkan</td>
+          <td>FOREIGN KEY REFERENCES products(product_id)</td>
+        </tr>
+        <tr>
+          <td>quantity</td>
+          <td>INT</td>
+          <td>Jumlah produk dalam keranjang</td>
+          <td>DEFAULT 1, > 0</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Tabel payments</h3>
+    <p>Berfungsi untuk menyimpan data pembayaran dengan
+       primary key 'payment_id'.</p>
+    <table>
+      <thead>
+        <tr>
+          <th>Field</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Contraints</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>payment_id</td>
+          <td>BIGINT</td>
+          <td>ID unik pembayaran</td>
+          <td>PRIMARY KEY, AUTO_INCREMENT</td>
+        </tr>
+        <tr>
+          <td>order_id</td>
+          <td>BIGINT</td>
+          <td>Order yang dibayar</td>
+          <td>FOREIGN KEY REFERENCES orders(order_id), UNIQUE</td>
+        </tr>
+        <tr>
+          <td>method</td>
+          <td>ENUM</td>
+          <td>Metode pembayaran</td>
+          <td>'bank_transfer', 'credit_card', 'e-wallet'</td>
+        </tr>
+        <tr>
+          <td>amount</td>
+          <td>DECIMAL(10,2)</td>
+          <td>Jumlah yang dibayar</td>
+          <td>NOT NULL, >= 0</td>
+        </tr>
+        <tr>
+          <td>status</td>
+          <td>ENUM</td>
+          <td>Status pembayaran</td>
+          <td>'pending', 'success', 'failed', 'expired'</td>
+        </tr>
+        <tr>
+          <td>payment_date</td>
+          <td>DATETIME</td>
+          <td>Waktu pembayaran</td>
+          <td>NULLABLE/td>
+        </tr>
+      </tbody>
+    </table>
+    <h3>Relasi antar tabel (ERD)</h3>
+    <p>Relasi menggambarkan hubungan antar tabel dan kuantitinya.</p>
+  
+    <figure>
+      <img src="assets/images/1erd.png" alt="ERD" class="code-image">
+      <figcaption>Gambar 1.1 ERD</figcaption>
+    </figure>
+
+    <h3>Migration Tabel</h3>
+    <p>Berikut migration untuk semua tabel yang telah kita rancang, dalam 
+      urutan yang benar untuk menghindari foreign key dependency error.</p>
+  
   </main>
 
   <footer>
