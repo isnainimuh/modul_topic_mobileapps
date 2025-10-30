@@ -498,13 +498,17 @@ php artisan make:migration create_users_table
       <button class="copy-btn" onclick="copyCode(this)">Copy</button>
       <pre><code id="mig-users" class="language-php"></code></pre>     
     </div>
-    
+
     <h3>Migration Categories</h3>
     <div class="code-block">
       <button class="copy-btn" onclick="copyCode(this)">Copy</button>
       <pre><code class="language-php">
 php artisan make:migration create_categories_table
       </code></pre>
+    </div>
+    <div class="code-block">
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre><code id="mig-categories" class="language-php"></code></pre>     
     </div>
 
 
@@ -515,6 +519,10 @@ php artisan make:migration create_categories_table
 php artisan make:migration create_products_table
       </code></pre>
     </div>
+    <div class="code-block">
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre><code id="mig-products" class="language-php"></code></pre>     
+    </div>
 
     <h3>Migration Product Images</h3>
     <div class="code-block">
@@ -522,6 +530,10 @@ php artisan make:migration create_products_table
       <pre><code class="language-php">
 php artisan make:migration create_product_images_table
       </code></pre>
+    </div>
+    <div class="code-block">
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre><code id="mig-proimages" class="language-php"></code></pre>     
     </div>
 
     <h3>Migration Carts</h3>
@@ -531,6 +543,10 @@ php artisan make:migration create_product_images_table
 php artisan make:migration create_carts_table
       </code></pre>
     </div>
+    <div class="code-block">
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre><code id="mig-carts" class="language-php"></code></pre>     
+    </div>
 
     <h3>Migration Cart Items</h3>
     <div class="code-block">
@@ -538,6 +554,10 @@ php artisan make:migration create_carts_table
       <pre><code class="language-php">
 php artisan make:migration create_cart_items_table
       </code></pre>
+    </div>
+    <div class="code-block">
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre><code id="mig-citems" class="language-php"></code></pre>     
     </div>
 
     <h3>Migration Order</h3>
@@ -547,6 +567,10 @@ php artisan make:migration create_cart_items_table
 php artisan make:migration create_orders_table
       </code></pre>
     </div>
+    <div class="code-block">
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre><code id="mig-orders" class="language-php"></code></pre>     
+    </div>
 
     <h3>Migration Order Items</h3>
     <div class="code-block">
@@ -554,6 +578,10 @@ php artisan make:migration create_orders_table
       <pre><code class="language-php">
 php artisan make:migration create_order_items_table
       </code></pre>
+    </div>
+    <div class="code-block">
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre><code id="mig-oitems" class="language-php"></code></pre>     
     </div>
 
     <h3>Migration Payments</h3>
@@ -563,6 +591,10 @@ php artisan make:migration create_order_items_table
 php artisan make:migration create_payments_table
       </code></pre>
     </div>
+    <div class="code-block">
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre><code id="mig-payments" class="language-php"></code></pre>     
+    </div>
 
     <h3>Jalankan Migration</h3>
     <div class="code-block">
@@ -570,6 +602,120 @@ php artisan make:migration create_payments_table
       <pre><code class="language-php">
 php artisan migrate
       </code></pre>
+    </div>
+
+    <h2>Step 5. Membuat Model</h3>
+    <p>Tahap berikutnya membuat model untuk tiap tabel. 
+      Model merupakan representasi tabel database di code yang
+      bertugas menangani query database dan validasi data. </p>
+
+      <h3>Model User</h3>
+    <div class="code-block">
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre><code class="language-php">
+php artisan make:model User
+      </code></pre>
+    </div>
+    <div class="code-block">
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre><code id="mod-users" class="language-php"></code></pre>     
+    </div>
+
+    <h3>Model Category</h3>
+    <div class="code-block">
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre><code class="language-php">
+php artisan make:model Category
+      </code></pre>
+    </div>
+    <div class="code-block">
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre><code id="mod-categories" class="language-php"></code></pre>     
+    </div>
+
+
+    <h3>Model Product</h3>
+    <div class="code-block">
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre><code class="language-php">
+php artisan make:model Product
+      </code></pre>
+    </div>
+    <div class="code-block">
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre><code id="mod-products" class="language-php"></code></pre>     
+    </div>
+
+    <h3>Model Product Image</h3>
+    <div class="code-block">
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre><code class="language-php">
+php artisan make:model ProductImage
+      </code></pre>
+    </div>
+    <div class="code-block">
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre><code id="mod-proimages" class="language-php"></code></pre>     
+    </div>
+
+    <h3>Model Cart</h3>
+    <div class="code-block">
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre><code class="language-php">
+php artisan make:model Cart
+      </code></pre>
+    </div>
+    <div class="code-block">
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre><code id="mig-carts" class="language-php"></code></pre>     
+    </div>
+
+    <h3>Model Cart Item</h3>
+    <div class="code-block">
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre><code class="language-php">
+php artisan make:model CartItem
+      </code></pre>
+    </div>
+    <div class="code-block">
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre><code id="mod-citems" class="language-php"></code></pre>     
+    </div>
+
+    <h3>Model Order</h3>
+    <div class="code-block">
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre><code class="language-php">
+php artisan make:model Order
+      </code></pre>
+    </div>
+    <div class="code-block">
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre><code id="mod-orders" class="language-php"></code></pre>     
+    </div>
+
+    <h3>Model Order Item</h3>
+    <div class="code-block">
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre><code class="language-php">
+php artisan make:model OrderItem
+      </code></pre>
+    </div>
+    <div class="code-block">
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre><code id="mod-oitems" class="language-php"></code></pre>     
+    </div>
+
+    <h3>Model Payment</h3>
+    <div class="code-block">
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre><code class="language-php">
+php artisan make:model Payment
+      </code></pre>
+    </div>
+    <div class="code-block">
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre><code id="mod-payments" class="language-php"></code></pre>     
     </div>
 
   </main>
@@ -595,6 +741,24 @@ function loadCode(fileName, elementId) {
 
 // memuat file langsung dari folder /codes/
 loadCode('codes/1mig_users.php.txt', 'mig-users');
+loadCode('codes/1mig_categories.php.txt', 'mig-categories');
+loadCode('codes/1mig_products.php.txt', 'mig-products');
+loadCode('codes/1mig_proimages.php.txt', 'mig-proimages');
+loadCode('codes/1mig_orders.php.txt', 'mig-orders');
+loadCode('codes/1mig_oitems.php.txt', 'mig-oitems');
+loadCode('codes/1mig_carts.php.txt', 'mig-carts');
+loadCode('codes/1mig_citems.php.txt', 'mig-citems');
+loadCode('codes/1mig_payments.php.txt', 'mig-payments');
+
+loadCode('codes/1mod_users.php.txt', 'mod-users');
+loadCode('codes/1mod_categories.php.txt', 'mod-categories');
+loadCode('codes/1mod_products.php.txt', 'mod-products');
+loadCode('codes/1mod_proimages.php.txt', 'mod-proimages');
+loadCode('codes/1mod_orders.php.txt', 'mod-orders');
+loadCode('codes/1mod_oitems.php.txt', 'mod-oitems');
+loadCode('codes/1mod_carts.php.txt', 'mod-carts');
+loadCode('codes/1mod_citems.php.txt', 'mod-citems');
+loadCode('codes/1mod_payments.php.txt', 'mod-payments');
 </script>
 
 </body>
