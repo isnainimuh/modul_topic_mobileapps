@@ -1,0 +1,37 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class Category extends Model
+{
+    use HasFactory;
+
+    protected $primaryKey = 'category_id';
+    
+    protected $fillable = [
+        'category_name',
+        'description',
+        'parent_category_id'
+    ];
+
+    // Relationship: Category punya banyak products
+    public function products()
+    {
+        return $this->hasMany(Product::class, 'category_id', 'category_id');
+    }
+
+    // Relationship: Parent category (self-relationship)
+    public function parent()
+    {
+        return $this->belongsTo(Category::class, 'parent_category_id', 'category_id');
+    }
+
+    // Relationship: Child categories
+    public function children()
+    {
+        return $this->hasMany(Category::class, 'parent_category_id', 'category_id');
+    }
+}
