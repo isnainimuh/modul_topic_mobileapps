@@ -1,0 +1,76 @@
+class Product {
+  final int productId;
+  final String productName;
+  final String description;
+  final double price;
+  final int stockQuantity;
+  final bool isActive;
+  final List<ProductImage> images;
+  final Category category;
+
+  Product({
+    required this.productId,
+    required this.productName,
+    required this.description,
+    required this.price,
+    required this.stockQuantity,
+    required this.isActive,
+    required this.images,
+    required this.category,
+  });
+
+  factory Product.fromJson(Map<String, dynamic> json) {
+    return Product(
+      productId: json['product_id'] ?? 0,
+      productName: json['product_name'] ?? '',
+      description: json['description'] ?? '',
+      price: double.parse((json['price'] ?? 0).toString()),
+      stockQuantity: json['stock_quantity'] ?? 0,
+      isActive: json['is_active'] ?? true,
+      images: (json['images'] as List? ?? [])
+          .map((image) => ProductImage.fromJson(image))
+          .toList(),
+      category: Category.fromJson(json['category'] ?? {}),
+    );
+  }
+}
+
+class ProductImage {
+  final int imageId;
+  final String imageUrl;
+  final int sortOrder;
+
+  ProductImage({
+    required this.imageId,
+    required this.imageUrl,
+    required this.sortOrder,
+  });
+
+  factory ProductImage.fromJson(Map<String, dynamic> json) {
+    return ProductImage(
+      imageId: json['image_id'] ?? 0,
+      imageUrl: json['image_url'] ?? '',
+      sortOrder: json['sort_order'] ?? 0,
+    );
+  }
+}
+
+class Category {
+  final int categoryId;
+  final String categoryName;
+  final String description;
+
+  Category({
+    required this.categoryId,
+    required this.categoryName,
+    required this.description,
+  });
+
+  factory Category.fromJson(Map<String, dynamic> json) {
+    return Category(
+      categoryId: json['category_id'] ?? 0,
+      categoryName: json['category_name'] ?? '',
+      description: json['description'] ?? '',
+    );
+  }
+}

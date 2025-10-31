@@ -1,0 +1,56 @@
+import 'product.dart';
+
+class Cart {
+  final int cartId;
+  final int userId;
+  final List<CartItem> items;
+
+  Cart({
+    required this.cartId,
+    required this.userId,
+    required this.items,
+  });
+
+  factory Cart.fromJson(Map<String, dynamic> json) {
+    return Cart(
+      cartId: json['cart_id'] ?? 0,
+      userId: json['user_id'] ?? 0,
+      items: (json['items'] as List? ?? [])
+          .map((item) => CartItem.fromJson(item))
+          .toList(),
+    );
+  }
+
+  double get totalPrice {
+    return items.fold(0, (sum, item) => sum + item.subtotal);
+  }
+
+  int get totalItems {
+    return items.fold(0, (sum, item) => sum + item.quantity);
+  }
+}
+
+class CartItem {
+  final int cartItemId;
+  final int productId;
+  final int quantity;
+  final Product product;
+
+  CartItem({
+    required this.cartItemId,
+    required this.productId,
+    required this.quantity,
+    required this.product,
+  });
+
+  factory CartItem.fromJson(Map<String, dynamic> json) {
+    return CartItem(
+      cartItemId: json['cart_item_id'] ?? 0,
+      productId: json['product_id'] ?? 0,
+      quantity: json['quantity'] ?? 0,
+      product: Product.fromJson(json['product'] ?? {}),
+    );
+  }
+
+  double get subtotal => quantity * product.price;
+}
