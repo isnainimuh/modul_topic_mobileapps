@@ -1,0 +1,24 @@
+use App\Http\Controllers\AuthController;
+
+// Auth Routes
+Route::post('/register', [AuthController::class, 'register']);
+Route::post('/login', [AuthController::class, 'login']);
+
+// Protected Routes
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/logout', [AuthController::class, 'logout']);
+    Route::get('/user', [AuthController::class, 'user']);
+    
+    // Tambahkan routes yang butuh auth di sini
+    Route::prefix('cart')->group(function () {
+        Route::get('/', [CartController::class, 'getUserCart']);
+        Route::post('/add', [CartController::class, 'addToCart']);
+        // ... other cart routes
+    });
+    
+    Route::prefix('orders')->group(function () {
+        Route::post('/', [OrderController::class, 'createOrder']);
+        Route::get('/my-orders', [OrderController::class, 'getUserOrders']);
+        // ... other order routes
+    });
+});
