@@ -1,0 +1,37 @@
+import 'package:flutter/foundation.dart';
+import '../models/cart.dart';
+
+class CartProvider with ChangeNotifier {
+  Cart? _cart;
+  bool _isLoading = false;
+
+  Cart? get cart => _cart;
+  bool get isLoading => _isLoading;
+  int get totalItems => _cart?.totalItems ?? 0;
+  double get totalPrice => _cart?.totalPrice ?? 0;
+
+  Future<void> fetchCart(String token) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      // Butuh endpoint GET /cart yang butuh auth
+      // _cart = await ApiService.getCart(token);
+      _isLoading = false;
+      notifyListeners();
+    } catch (e) {
+      _isLoading = false;
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  Future<void> addToCart(String token, int productId, int quantity) async {
+    try {
+      // await ApiService.addToCart(token, productId, quantity);
+      await fetchCart(token); // Refresh cart
+    } catch (e) {
+      rethrow;
+    }
+  }
+}

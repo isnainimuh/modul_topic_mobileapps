@@ -1,0 +1,113 @@
+import 'package:flutter/foundation.dart';
+import '../models/order.dart';
+import '../services/api_service.dart';
+
+class OrderProvider with ChangeNotifier {
+  List<Order> _orders = [];
+  Order? _currentOrder;
+  bool _isLoading = false;
+
+  List<Order> get orders => _orders;
+  Order? get currentOrder => _currentOrder;
+  bool get isLoading => _isLoading;
+
+  // Orders
+  Future<void> fetchUserOrders(String token) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      _orders = await ApiService.getUserOrders(token);
+      _isLoading = false;
+      notifyListeners();
+    } catch (e) {
+      _isLoading = false;
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  Future<Order> createOrder(
+      String token, Map<String, dynamic> orderData) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      _currentOrder = await ApiService.createOrder(token, orderData);
+      _orders.insert(0, _currentOrder!); // Add to beginning of list
+      _isLoading = false;
+      notifyListeners();
+      return _currentOrder!;
+    } catch (e) {
+      _isLoading = false;
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  Future<void> cancelOrder(String token, int orderId) async {
+    try {
+      await ApiService.updateOrderStatus(token, orderId, 'cancelled');
+      // Update local order status by replacing the order
+      final orderIndex =
+          _orders.indexWhere((order) => order.orderId == orderId);
+      if (orderIndex != -1) {
+        final updatedOrder = await ApiService.getOrderDetails(token, orderId);
+        _orders[orderIndex] = updatedOrder;
+        notifyListeners();
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<Order> getOrderDetails(String token, int orderId) async {
+    try {
+      final order = await ApiService.getOrderDetails(token, orderId);
+      return order;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // Order statistics
+  Map<String, int> getOrderStats() {
+    return {
+      'total': _orders.length,
+      'pending': _orders.where((order) => order.status == 'pending').length,
+      'paid': _orders.where((order) => order.status == 'paid').length,
+      'shipped': _orders.where((order) => order.status == 'shipped').length,
+      'delivered': _orders.where((order) => order.status == 'delivered').length,
+      'cancelled': _orders.where((order) => order.status == 'cancelled').length,
+    };
+  }
+
+  // Get orders by status
+  List<Order> getOrdersByStatus(String status) {
+    return _orders.where((order) => order.status == status).toList();
+  }
+
+  // Update order status locally (helper method)
+  void updateOrderStatus(int orderId, String newStatus) {
+    final orderIndex = _orders.indexWhere((order) => order.orderId == orderId);
+    if (orderIndex != -1) {
+      // Create a new Order with updated status since Order is immutable
+      final oldOrder = _orders[orderIndex];
+      final updatedOrder = Order(
+        orderId: oldOrder.orderId,
+        userId: oldOrder.userId,
+        status: newStatus,
+        totalAmount: oldOrder.totalAmount,
+        shippingCost: oldOrder.shippingCost,
+        shippingAddress: oldOrder.shippingAddress,
+        orderDate: oldOrder.orderDate,
+        shippedAt: oldOrder.shippedAt,
+        deliveredAt: oldOrder.deliveredAt,
+        items: oldOrder.items,
+        payment: oldOrder.payment,
+      );
+      _orders[orderIndex] = updatedOrder;
+      notifyListeners();
+    }
+  }
+}

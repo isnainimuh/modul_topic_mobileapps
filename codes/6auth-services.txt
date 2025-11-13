@@ -1,0 +1,118 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import '../models/auth.dart';
+
+class AuthService {
+  static const String baseUrl = 'http://localhost:8000/api';
+
+  static Future<Map<String, String>> getHeaders({String? token}) async {
+    var headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    };
+
+    if (token != null) {
+      headers['Authorization'] = 'Bearer $token';
+    }
+
+    return headers;
+  }
+
+  static Future<User> login(LoginRequest request) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/login'),
+        headers: await getHeaders(),
+        body: json.encode(request.toJson()),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['success']) {
+          return User(
+            userId: data['data']['user']['user_id'] ??
+                data['data']['user']['id'] ??
+                0,
+            name: data['data']['user']['name'] ?? '',
+            email: data['data']['user']['email'] ?? '',
+            phoneNumber: data['data']['user']['phone_number'],
+            token: data['data']['token'],
+          );
+        }
+      }
+      throw Exception('Login failed: ${response.body}');
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
+
+  static Future<User> register(RegisterRequest request) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/register'),
+        headers: await getHeaders(),
+        body: json.encode(request.toJson()),
+      );
+
+      if (response.statusCode == 201) {
+        final data = json.decode(response.body);
+        if (data['success']) {
+          return User(
+            userId: data['data']['user']['user_id'] ??
+                data['data']['user']['id'] ??
+                0,
+            name: data['data']['user']['name'] ?? '',
+            email: data['data']['user']['email'] ?? '',
+            phoneNumber: data['data']['user']['phone_number'],
+            token: data['data']['token'],
+          );
+        }
+      }
+      throw Exception('Registration failed: ${response.body}');
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
+
+  static Future<void> logout(String token) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/logout'),
+        headers: await getHeaders(token: token),
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('Logout failed');
+      }
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
+
+  static Future<User> getUser(String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/user'),
+        headers: await getHeaders(token: token),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['success']) {
+          // Return new User object dengan token
+          return User(
+            userId: data['data']['user_id'] ?? data['data']['id'] ?? 0,
+            name: data['data']['name'] ?? '',
+            email: data['data']['email'] ?? '',
+            phoneNumber: data['data']['phone_number'],
+            token: token, // Set token di constructor
+          );
+        }
+      }
+
+      throw Exception('Failed to get user data');
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
+}

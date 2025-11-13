@@ -1,0 +1,148 @@
+import 'package:flutter/foundation.dart';
+import '../models/payment.dart';
+import '../services/api_service.dart';
+
+class PaymentProvider with ChangeNotifier {
+  List<Payment> _payments = [];
+  Payment? _currentPayment;
+  bool _isLoading = false;
+  final List<String> _availableMethods = [
+    'bank_transfer',
+    'credit_card',
+    'e-wallet'
+  ];
+
+  List<Payment> get payments => _payments;
+  Payment? get currentPayment => _currentPayment;
+  bool get isLoading => _isLoading;
+  List<String> get availableMethods => _availableMethods;
+
+  // Payments
+  Future<Payment> createPayment(
+      String token, Map<String, dynamic> paymentData) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      _currentPayment = await ApiService.createPayment(token, paymentData);
+      _payments.add(_currentPayment!);
+      _isLoading = false;
+      notifyListeners();
+      return _currentPayment!;
+    } catch (e) {
+      _isLoading = false;
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  Future<void> fetchOrderPayments(String token, int orderId) async {
+    try {
+      _payments = await ApiService.getOrderPayments(token, orderId);
+      notifyListeners();
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> fetchUserPayments(String token) async {
+    try {
+      _payments = await ApiService.getPaymentsByUser(token);
+      notifyListeners();
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> updatePaymentStatus(
+      String token, String paymentId, String status) async {
+    try {
+      await ApiService.updatePaymentStatus(token, paymentId, status);
+      // Update local payment status by replacing the payment
+      final paymentIndex =
+          _payments.indexWhere((payment) => payment.paymentId == paymentId);
+      if (paymentIndex != -1) {
+        final updatedPayment =
+            await ApiService.getPaymentDetails(token, paymentId);
+        _payments[paymentIndex] = updatedPayment;
+        notifyListeners();
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // Payment status helpers
+  bool isPaymentPending(Payment payment) {
+    return payment.status == 'pending';
+  }
+
+  bool isPaymentSuccess(Payment payment) {
+    return payment.status == 'success';
+  }
+
+  bool isPaymentFailed(Payment payment) {
+    return payment.status == 'failed' || payment.status == 'expired';
+  }
+
+  // Get payment by order
+  Payment? getPaymentByOrder(int orderId) {
+    try {
+      return _payments.firstWhere((payment) => payment.orderId == orderId);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // Get payment status text
+  String getPaymentStatusText(String status) {
+    switch (status) {
+      case 'pending':
+        return 'Menunggu Pembayaran';
+      case 'success':
+        return 'Berhasil';
+      case 'failed':
+        return 'Gagal';
+      case 'expired':
+        return 'Kadaluarsa';
+      default:
+        return 'Tidak Diketahui';
+    }
+  }
+
+  // Get payment method text
+  String getPaymentMethodText(String method) {
+    switch (method) {
+      case 'bank_transfer':
+        return 'Transfer Bank';
+      case 'credit_card':
+        return 'Kartu Kredit';
+      case 'e-wallet':
+        return 'E-Wallet';
+      default:
+        return method;
+    }
+  }
+
+  // Update payment locally (helper method)
+  void updatePaymentStatusLocally(String paymentId, String newStatus) {
+    final paymentIndex =
+        _payments.indexWhere((payment) => payment.paymentId == paymentId);
+    if (paymentIndex != -1) {
+      // Create a new Payment with updated status since Payment is immutable
+      final oldPayment = _payments[paymentIndex];
+      final updatedPayment = Payment(
+        paymentId: oldPayment.paymentId,
+        orderId: oldPayment.orderId,
+        method: oldPayment.method,
+        status: newStatus,
+        amount: oldPayment.amount,
+        paymentDate:
+            newStatus == 'success' ? DateTime.now() : oldPayment.paymentDate,
+        createdAt: oldPayment.createdAt, // Tambahkan parameter yang required
+      );
+      _payments[paymentIndex] = updatedPayment;
+      notifyListeners();
+    }
+  }
+}

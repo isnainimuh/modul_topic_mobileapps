@@ -1,0 +1,46 @@
+class Payment {
+  final int paymentId;
+  final int orderId;
+  final String method;
+  final double amount;
+  final String status;
+  final DateTime? paymentDate;
+  final DateTime createdAt;
+
+  Payment({
+    required this.paymentId,
+    required this.orderId,
+    required this.method,
+    required this.amount,
+    required this.status,
+    this.paymentDate,
+    required this.createdAt,
+  });
+
+  factory Payment.fromJson(Map<String, dynamic> json) {
+    return Payment(
+      paymentId: json['payment_id'] ?? 0,
+      orderId: json['order_id'] ?? 0,
+      method: json['method'] ?? '',
+      amount: double.parse((json['amount'] ?? 0).toString()),
+      status: json['status'] ?? 'pending',
+      paymentDate: json['payment_date'] != null
+          ? DateTime.parse(json['payment_date'])
+          : null,
+      createdAt: DateTime.parse(json['created_at']),
+    );
+  }
+
+  String get methodText {
+    switch (method) {
+      case 'bank_transfer':
+        return 'Transfer Bank';
+      case 'credit_card':
+        return 'Kartu Kredit';
+      case 'e-wallet':
+        return 'E-Wallet';
+      default:
+        return method;
+    }
+  }
+}

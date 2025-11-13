@@ -1,0 +1,430 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import '../models/product.dart';
+import '../models/cart.dart';
+import '../models/order.dart';
+import '../models/payment.dart';
+import '../models/category.dart'; // Pastikan import Category
+
+class ApiService {
+  static const String baseUrl = 'http://localhost:8000/api';
+
+  // Method getHeaders yang benar
+  static Future<Map<String, String>> getHeaders({String? token}) async {
+    final headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    };
+
+    if (token != null && token.isNotEmpty) {
+      headers['Authorization'] = 'Bearer $token';
+    }
+
+    return headers;
+  }
+
+  // Products
+  static Future<List<Product>> getProducts() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/products'),
+        headers: await getHeaders(),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['success']) {
+          return (data['data']['data'] as List)
+              .map((product) => Product.fromJson(product))
+              .toList();
+        }
+      }
+      throw Exception('Failed to load products');
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
+
+  // Categories
+  static Future<List<Category>> getCategories() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/categories'),
+        headers: await getHeaders(),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['success']) {
+          return (data['data'] as List)
+              .map((category) => Category.fromJson(category))
+              .toList();
+        }
+      }
+      throw Exception('Failed to load categories');
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
+
+  // Featured Products
+  static Future<List<Product>> getFeaturedProducts() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/products/featured'),
+        headers: await getHeaders(),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['success']) {
+          return (data['data'] as List)
+              .map((product) => Product.fromJson(product))
+              .toList();
+        }
+      }
+      throw Exception('Failed to load featured products');
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
+
+  // Get Product by ID
+  static Future<Product> getProductById(int productId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/products/$productId'),
+        headers: await getHeaders(),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['success']) {
+          return Product.fromJson(data['data']);
+        }
+      }
+      throw Exception('Failed to load product details');
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
+
+  // ORDERS - Sesuaikan dengan provider yang ada
+  static Future<List<Order>> getOrders(String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/orders'),
+        headers: await getHeaders(token: token),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['success']) {
+          return (data['data'] as List)
+              .map((order) => Order.fromJson(order))
+              .toList();
+        }
+      }
+      throw Exception('Failed to load orders');
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
+
+  // Get User Orders
+  static Future<List<Order>> getUserOrders(String token) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/orders'),
+      headers: {
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+      return data.map((json) => Order.fromJson(json)).toList();
+    } else {
+      throw Exception('Failed to load orders');
+    }
+  }
+
+  // Create Order
+  static Future<Order> createOrder(
+      String token, Map<String, dynamic> orderData) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/orders'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode(orderData),
+    );
+
+    if (response.statusCode == 201) {
+      return Order.fromJson(jsonDecode(response.body));
+    } else {
+      throw Exception('Failed to create order');
+    }
+  }
+
+  // Get Order by ID
+  static Future<Order> getOrderById(String token, String orderId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/orders/$orderId'),
+        headers: await getHeaders(token: token),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['success']) {
+          return Order.fromJson(data['data']);
+        }
+      }
+      throw Exception('Failed to load order details');
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
+
+  // Update Order Status
+  static Future<void> updateOrderStatus(
+      String token, int orderId, String status) async {
+    final response = await http.put(
+      Uri.parse('$baseUrl/orders/$orderId/status'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({'status': status}),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to update order status');
+    }
+  }
+
+  // PAYMENTS
+  static Future<Payment> createPayment(
+      String token, Map<String, dynamic> paymentData) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/payments'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode(paymentData),
+    );
+
+    if (response.statusCode == 201) {
+      return Payment.fromJson(jsonDecode(response.body));
+    } else {
+      throw Exception('Failed to create payment');
+    }
+  }
+
+  //Get order details
+  static Future<Order> getOrderDetails(String token, int orderId) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/orders/$orderId'),
+      headers: {
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return Order.fromJson(jsonDecode(response.body));
+    } else {
+      throw Exception('Failed to get order details');
+    }
+  }
+
+  // Get Order Payments
+  static Future<List<Payment>> getOrderPayments(
+      String token, int orderId) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/orders/$orderId/payments'),
+      headers: {
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+      return data.map((json) => Payment.fromJson(json)).toList();
+    } else {
+      throw Exception('Failed to load order payments');
+    }
+  }
+
+  static Future<Payment> getPaymentDetails(
+      String token, String paymentId) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/payments/$paymentId'),
+      headers: {
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return Payment.fromJson(jsonDecode(response.body));
+    } else {
+      throw Exception('Failed to get payment details');
+    }
+  }
+
+  static Future<List<Payment>> getPaymentsByUser(String token) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/payments'),
+      headers: {
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+      return data.map((json) => Payment.fromJson(json)).toList();
+    } else {
+      throw Exception('Failed to load user payments');
+    }
+  }
+
+  // Update Payment Status
+  static Future<void> updatePaymentStatus(
+      String token, String paymentId, String status) async {
+    final response = await http.put(
+      Uri.parse('$baseUrl/payments/$paymentId/status'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({'status': status}),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to update payment status');
+    }
+  }
+
+  // CART Operations
+  static Future<Cart> getCart(String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/cart'),
+        headers: await getHeaders(token: token),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['success']) {
+          return Cart.fromJson(data['data']);
+        }
+      }
+      throw Exception('Failed to load cart');
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
+
+  static Future<void> addToCart(
+      String token, int productId, int quantity) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/cart/add'),
+        headers: await getHeaders(token: token),
+        body: json.encode({
+          'product_id': productId,
+          'quantity': quantity,
+        }),
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('Failed to add item to cart');
+      }
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
+
+  static Future<void> updateCartItem(
+      String token, int cartItemId, int quantity) async {
+    try {
+      final response = await http.put(
+        Uri.parse('$baseUrl/cart/update/$cartItemId'),
+        headers: await getHeaders(token: token),
+        body: json.encode({'quantity': quantity}),
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('Failed to update cart item');
+      }
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
+
+  static Future<void> removeFromCart(String token, int cartItemId) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('$baseUrl/cart/remove/$cartItemId'),
+        headers: await getHeaders(token: token),
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('Failed to remove item from cart');
+      }
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
+
+  // AUTH (jika diperlukan)
+  static Future<Map<String, dynamic>> login(
+      String email, String password) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/auth/login'),
+        headers: await getHeaders(),
+        body: json.encode({
+          'email': email,
+          'password': password,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['success']) {
+          return data['data'];
+        }
+      }
+      throw Exception('Login failed');
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
+
+  static Future<Map<String, dynamic>> register(
+      String name, String email, String password) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/auth/register'),
+        headers: await getHeaders(),
+        body: json.encode({
+          'name': name,
+          'email': email,
+          'password': password,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['success']) {
+          return data['data'];
+        }
+      }
+      throw Exception('Registration failed');
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
+}

@@ -1,0 +1,151 @@
+// Categories
+static Future<List<Category>> getCategories() async {
+  try {
+    final response = await http.get(
+      Uri.parse('$baseUrl/categories'),
+      headers: await headers,
+    );
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      if (data['success']) {
+        return (data['data'] as List)
+            .map((category) => Category.fromJson(category))
+            .toList();
+      }
+    }
+    throw Exception('Failed to load categories');
+  } catch (e) {
+    throw Exception('Network error: $e');
+  }
+}
+
+// Featured Products
+static Future<List<Product>> getFeaturedProducts() async {
+  try {
+    final response = await http.get(
+      Uri.parse('$baseUrl/products/featured'),
+      headers: await headers,
+    );
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      if (data['success']) {
+        return (data['data'] as List)
+            .map((product) => Product.fromJson(product))
+            .toList();
+      }
+    }
+    throw Exception('Failed to load featured products');
+  } catch (e) {
+    throw Exception('Network error: $e');
+  }
+}
+
+// Orders (untuk OrderProvider)
+static Future<List<Order>> getUserOrders(String token) async {
+  try {
+    final response = await http.get(
+      Uri.parse('$baseUrl/orders/user/1'), // User ID sementara
+      headers: await getHeaders(token: token),
+    );
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      if (data['success']) {
+        return (data['data'] as List)
+            .map((order) => Order.fromJson(order))
+            .toList();
+      }
+    }
+    throw Exception('Failed to load user orders');
+  } catch (e) {
+    throw Exception('Network error: $e');
+  }
+}
+
+static Future<Order> createOrder(String token, String shippingAddress) async {
+  try {
+    final response = await http.post(
+      Uri.parse('$baseUrl/orders'),
+      headers: await getHeaders(token: token),
+      body: json.encode({
+        'user_id': 1, // User ID sementara
+        'shipping_address': shippingAddress,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      if (data['success']) {
+        return Order.fromJson(data['data']['order']);
+      }
+    }
+    throw Exception('Failed to create order');
+  } catch (e) {
+    throw Exception('Network error: $e');
+  }
+}
+
+// Payments (untuk PaymentProvider)
+static Future<Payment> createPayment(String token, int orderId, String method) async {
+  try {
+    final response = await http.post(
+      Uri.parse('$baseUrl/payments'),
+      headers: await getHeaders(token: token),
+      body: json.encode({
+        'order_id': orderId,
+        'method': method,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      if (data['success']) {
+        return Payment.fromJson(data['data']);
+      }
+    }
+    throw Exception('Failed to create payment');
+  } catch (e) {
+    throw Exception('Network error: $e');
+  }
+}
+
+static Future<List<Payment>> getOrderPayments(String token, int orderId) async {
+  try {
+    final response = await http.get(
+      Uri.parse('$baseUrl/payments/order/$orderId'),
+      headers: await getHeaders(token: token),
+    );
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      if (data['success']) {
+        return (data['data'] as List)
+            .map((payment) => Payment.fromJson(payment))
+            .toList();
+      }
+    }
+    throw Exception('Failed to load order payments');
+  } catch (e) {
+    throw Exception('Network error: $e');
+  }
+}
+
+static Future<void> updatePaymentStatus(String token, int paymentId, String status) async {
+  try {
+    final response = await http.post(
+      Uri.parse('$baseUrl/payments/$paymentId/status'),
+      headers: await getHeaders(token: token),
+      body: json.encode({
+        'status': status,
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to update payment status');
+    }
+  } catch (e) {
+    throw Exception('Network error: $e');
+  }
+}
