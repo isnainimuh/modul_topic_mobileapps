@@ -86,7 +86,7 @@ dengan tegas antara UI layer dan business logic.
     <p>Lokasi file: lib/models/auth.dart</p>
     <div class="code-block">
       <button class="copy-btn" onclick="copyCode(this)">Copy</button>
-      <pre><code id="auth-dart" class="language-php"></code></pre>
+      <pre><code id="auth-model" class="language-php"></code></pre>
     </div>
 
     <h3>Auth Service</h3>
@@ -152,11 +152,40 @@ flutter run -d chrome
       <pre><code id="cart-model" class="language-php"></code></pre>
     </div>
 
-    <h2>Product Provider</h2>
-    <p>Lokasi file: lib/providers/product_provider.dart</p>
+    <h2>Integrasi AuthProvider dan ProductProvider</h2>
+    <p>Integrasi ditandai dengan pemberian token. Berguna untuk manajemen
+      halaman sesuai dengan profil tiap pengguna.
+    </p>
+    <h3>Step 1: Buat product_provider.dart </h3>
+    <p>Integrasikan agar product_provider menerima dependency pada AuthProvider.
+    </p>
     <div class="code-block">
       <button class="copy-btn" onclick="copyCode(this)">Copy</button>
       <pre><code id="product-provider" class="language-php"></code></pre>
+    </div>
+
+    <h3>Step 2: Modifikasi home_screen.dart</h3>
+    <p>Modifikasi agar home screen  menggunakan ProductProvider 
+      yang sudah di-update. Perhatikan beberapa tanda komentar '//' untuk menambahkan kode 
+      di bagian tertentu.
+    </p>
+    <div class="code-block">
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre><code id="update-home" class="language-php"></code></pre>
+    </div>
+
+    <h3>Step 3: Update setup provider di main.dart</h3>
+    <p>Pastikan setup providernya benar.</p>
+    <div class="code-block">
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre><codeclass="language-php">
+    ChangeNotifierProvider(create: (context) => AuthProvider()),
+    ChangeNotifierProvider(create: (context) => ProductProvider(
+      Provider.of<AuthProvider>(context, listen: false)
+    )),
+    // Providers lainnya...
+  ],
+      </code></pre>
     </div>
 
     <h2>Product Model</h2>
@@ -218,13 +247,6 @@ flutter run -d chrome
       <pre><code id="api-update" class="language-php"></code></pre>
     </div>
 
-    <h2>Tambahkan Product Card Widget</h2>
-    <p>Lokasi file: lib/widgets/product_card.dart</p>
-    <div class="code-block">
-      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
-      <pre><code id="product_card" class="language-php"></code></pre>
-    </div>
-
     <p>Pastikan tidak ada error (tanda merah) pada semua file code yang
       sudah dibuat. Jika semua sudah ok, maka kita telah menyelesaikan:<br>
 ✅ Laravel Sanctum Setup<br>
@@ -235,7 +257,6 @@ flutter run -d chrome
 ✅ Auto Navigation berdasarkan Auth Status<br>
 ✅ Cart, Product, Order dan Payment Provider<br>
 ✅ Cart, category, Order, Payment dan Product Model<br>
-✅ Product Card Widgets
     </p>
 
   </main>
@@ -265,7 +286,7 @@ loadCode('codes/6auth-model.txt', 'auth-model');
 loadCode('codes/6auth-provider.txt', 'auth-provider');
 loadCode('codes/6auth-services.txt', 'auth-services');
 loadCode('codes/6cart-model.txt', 'cart-model');
-
+loadCode('codes/6update-home.txt', 'update-home');
 loadCode('codes/6cart-provider.txt', 'cart-provider');
 loadCode('codes/6category-model.txt', 'category-model');
 loadCode('codes/6login-screen.txt', 'login-screen');
@@ -275,13 +296,12 @@ loadCode('codes/6order-model.txt', 'order-model');
 loadCode('codes/6order-provider.txt', 'order-provider');
 loadCode('codes/6payment-model.txt', 'payment-model');
 loadCode('codes/6payment-provider.txt', 'payment-provider');
-loadCode('codes/6product_model.txt', 'product-model');
-loadCode('codes/6product_provider.txt', 'product-provider');
-loadCode('codes/6product-card.txt', 'product_card');
+loadCode('codes/6product-model.txt', 'product-model');
+loadCode('codes/6product-provider.txt', 'product-provider');
+loadCode('codes/6product-card.txt', 'product-card');
 loadCode('codes/6register-screen.txt', 'register-screen');
 
 </script>
 
 </body>
 </html>
-
