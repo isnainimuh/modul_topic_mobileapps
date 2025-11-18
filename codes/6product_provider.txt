@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import '../models/product.dart';
 import '../models/category.dart' as my_category;
 import '../services/api_service.dart';
+import 'auth_provider.dart'; // Tambahkan ini
 
 class ProductProvider with ChangeNotifier {
   List<Product> _products = [];
@@ -10,21 +11,33 @@ class ProductProvider with ChangeNotifier {
   bool _isLoading = false;
   String _searchQuery = '';
   int? _selectedCategoryId;
+  String _error = '';
 
+  final AuthProvider authProvider; // Tambahkan ini
+
+  // Constructor yang menerima AuthProvider
+  ProductProvider(this.authProvider);
+
+  // Getters
   List<Product> get products => _products;
   List<my_category.Category> get categories => _categories;
   List<Product> get featuredProducts => _featuredProducts;
   bool get isLoading => _isLoading;
   String get searchQuery => _searchQuery;
   int? get selectedCategoryId => _selectedCategoryId;
+  String get error => _error;
 
-  // Products
+  // Fetch all products dengan error handling
   Future<void> fetchProducts({int? categoryId, String? search}) async {
     _isLoading = true;
+    _error = '';
     notifyListeners();
+    //print('Fetching products...');
 
     try {
-      List<Product> allProducts = await ApiService.getProducts();
+      List<Product> allProducts =
+          await ApiService.getProducts(authProvider.token);
+      //print('Products count: ${allProducts.length}');
 
       // Filter by category if provided
       if (categoryId != null) {
@@ -37,7 +50,9 @@ class ProductProvider with ChangeNotifier {
       if (search != null && search.isNotEmpty) {
         allProducts = allProducts
             .where((product) =>
-                product.name.toLowerCase().contains(search.toLowerCase()) ||
+                product.productName
+                    .toLowerCase()
+                    .contains(search.toLowerCase()) ||
                 product.description
                     .toLowerCase()
                     .contains(search.toLowerCase()))
@@ -45,35 +60,46 @@ class ProductProvider with ChangeNotifier {
       }
 
       _products = allProducts;
-      _isLoading = false;
-      notifyListeners();
+      _error = '';
     } catch (e) {
+      _error = 'Failed to load products: $e';
+      //print('Error: $_error'); //
+      if (kDebugMode) {
+        print('Error fetching products: $e');
+      }
+    } finally {
       _isLoading = false;
       notifyListeners();
-      rethrow;
     }
   }
 
+  // Fetch featured products dengan error handling
   Future<void> fetchFeaturedProducts() async {
     try {
       _featuredProducts = await ApiService.getFeaturedProducts();
-      notifyListeners();
     } catch (e) {
-      rethrow;
+      _error = 'Failed to load featured products: $e';
+      if (kDebugMode) {
+        print('Error fetching featured products: $e');
+      }
     }
+    notifyListeners();
   }
 
-  // Categories
+  // Fetch categories dengan error handling
   Future<void> fetchCategories() async {
     try {
       _categories = await ApiService.getCategories();
-      notifyListeners();
     } catch (e) {
-      rethrow;
+      _error = 'Failed to load categories: $e';
+      if (kDebugMode) {
+        print('Error fetching categories: $e');
+      }
     }
+    notifyListeners();
   }
 
-  // Search & Filter
+  // Search & Filter methods tetap sama...
   void setSearchQuery(String query) {
     _searchQuery = query;
     notifyListeners();
@@ -88,10 +114,9 @@ class ProductProvider with ChangeNotifier {
     _searchQuery = '';
     _selectedCategoryId = null;
     notifyListeners();
-    fetchProducts(); // Refresh tanpa filter
+    fetchProducts();
   }
 
-  // Get product by ID
   Product? getProductById(int productId) {
     try {
       return _products.firstWhere((product) => product.productId == productId);
@@ -100,22 +125,20 @@ class ProductProvider with ChangeNotifier {
     }
   }
 
-  // Get products by category
   List<Product> getProductsByCategory(int categoryId) {
     return _products
         .where((product) => product.category.categoryId == categoryId)
         .toList();
   }
 
-  // Apply filters (combine search and category) - FIXED: removed await
   Future<void> applyFilters() async {
     _isLoading = true;
     notifyListeners();
 
     try {
-      List<Product> filteredProducts = await ApiService.getProducts();
+      List<Product> filteredProducts =
+          await ApiService.getProducts(authProvider.token);
 
-      // Apply category filter
       if (_selectedCategoryId != null) {
         filteredProducts = filteredProducts
             .where(
@@ -123,11 +146,10 @@ class ProductProvider with ChangeNotifier {
             .toList();
       }
 
-      // Apply search filter
       if (_searchQuery.isNotEmpty) {
         filteredProducts = filteredProducts
             .where((product) =>
-                product.name
+                product.productName
                     .toLowerCase()
                     .contains(_searchQuery.toLowerCase()) ||
                 product.description
@@ -137,16 +159,14 @@ class ProductProvider with ChangeNotifier {
       }
 
       _products = filteredProducts;
-      _isLoading = false;
-      notifyListeners();
     } catch (e) {
+      _error = 'Failed to apply filters: $e';
+    } finally {
       _isLoading = false;
       notifyListeners();
-      rethrow;
     }
   }
 
-  // Refresh products with current filters
   Future<void> refreshProducts() async {
     await fetchProducts(
       categoryId: _selectedCategoryId,
@@ -154,11 +174,9 @@ class ProductProvider with ChangeNotifier {
     );
   }
 
-  // Get filtered products based on current filters (for UI)
   List<Product> get filteredProducts {
     List<Product> filtered = _products;
 
-    // Apply category filter
     if (_selectedCategoryId != null) {
       filtered = filtered
           .where(
@@ -166,11 +184,12 @@ class ProductProvider with ChangeNotifier {
           .toList();
     }
 
-    // Apply search filter
     if (_searchQuery.isNotEmpty) {
       filtered = filtered
           .where((product) =>
-              product.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+              product.productName
+                  .toLowerCase()
+                  .contains(_searchQuery.toLowerCase()) ||
               product.description
                   .toLowerCase()
                   .contains(_searchQuery.toLowerCase()))
@@ -178,5 +197,11 @@ class ProductProvider with ChangeNotifier {
     }
 
     return filtered;
+  }
+
+  // Clear error
+  void clearError() {
+    _error = '';
+    notifyListeners();
   }
 }
