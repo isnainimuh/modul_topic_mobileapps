@@ -1,0 +1,71 @@
+import 'package:flutter/material.dart';
+import '../widgets/product_card.dart';
+import '../providers/product_provider.dart'; // Pastikan import provider
+import 'package:provider/provider.dart'; // Import provider package
+
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
+
+  @override
+  _HomeScreenState createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  // Hapus state management lokal, gunakan provider saja
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProducts();
+  }
+
+  Future<void> _loadProducts() async {
+    try {
+      // Gunakan provider untuk load products
+      await Provider.of<ProductProvider>(context, listen: false)
+          .fetchProducts();
+      setState(() {
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error loading products: $e')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final productProvider = Provider.of<ProductProvider>(context);
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('E-Commerce Mobile'),
+        backgroundColor: Colors.blue,
+        foregroundColor: Colors.white,
+      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : productProvider.products.isEmpty
+              ? const Center(child: Text('No products available'))
+              : GridView.builder(
+                  padding: const EdgeInsets.all(8),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 8,
+                    mainAxisSpacing: 8,
+                    childAspectRatio: 0.7,
+                  ),
+                  itemCount: productProvider.products.length,
+                  itemBuilder: (context, index) {
+                    return ProductCard(
+                        product: productProvider.products[index]);
+                  },
+                ),
+    );
+  }
+}
