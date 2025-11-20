@@ -1,0 +1,15 @@
+SliverAppBar(
+  expandedHeight: 300,
+  flexibleSpace: FlexibleSpaceBar(
+    background: MultiImageSlider(
+      imageUrls: product.images.map((img) => img.imageUrl).toList(),
+    ),
+  ),
+  pinned: true,
+  actions: [
+    IconButton(
+      icon: const Icon(Icons.favorite_border),
+      onPressed: () {},
+    ),
+  ],
+),
