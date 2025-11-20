@@ -1,0 +1,85 @@
+import 'package:flutter/foundation.dart';
+import '../models/cart.dart';
+import '../services/api_service.dart';
+
+class CartProvider with ChangeNotifier {
+  Cart? _cart;
+  bool _isLoading = false;
+
+  Cart? get cart => _cart;
+  bool get isLoading => _isLoading;
+
+  int get totalItems => _cart?.totalItems ?? 0;
+  double get totalPrice => _cart?.totalPrice ?? 0;
+
+  // ---------------------------
+  //  GET CART
+  // ---------------------------
+  Future<void> fetchCart(String token, int userId) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      _cart = await ApiService.getCart(token, userId);
+    } catch (e) {
+      debugPrint("Error fetching cart: $e");
+    }
+
+    _isLoading = false;
+    notifyListeners();
+  }
+
+  // ---------------------------
+  //  ADD TO CART
+  // ---------------------------
+  Future<void> addToCart(
+      String token, int userId, int productId, int qty) async {
+    try {
+      await ApiService.addToCart(token, userId, productId, qty);
+      await fetchCart(token, userId);
+    } catch (e) {
+      debugPrint("Error adding to cart: $e");
+      rethrow;
+    }
+  }
+
+  // ---------------------------
+  //  UPDATE CART ITEM
+  // ---------------------------
+  Future<void> updateCartItem(
+      String token, int userId, int productId, int qty) async {
+    try {
+      await ApiService.updateCartItem(token, userId, productId, qty);
+      await fetchCart(token, userId);
+    } catch (e) {
+      debugPrint("Error updating cart item: $e");
+      rethrow;
+    }
+  }
+
+  // ---------------------------
+  //  REMOVE FROM CART
+  // ---------------------------
+  Future<void> removeFromCart(String token, int userId, int productId) async {
+    try {
+      await ApiService.removeFromCart(token, userId, productId);
+      await fetchCart(token, userId);
+    } catch (e) {
+      debugPrint("Error removing from cart: $e");
+      rethrow;
+    }
+  }
+
+  // ---------------------------
+  //  CLEAR CART
+  // ---------------------------
+  Future<void> clearCart(String token, int userId) async {
+    try {
+      await ApiService.clearCart(token, userId);
+      await fetchCart(token, userId);
+    } catch (e) {
+      debugPrint("Error clearing cart: $e");
+      rethrow;
+    }
+  }
+}

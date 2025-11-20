@@ -1,0 +1,14 @@
+static Future<Order> getOrderDetails(String token, int orderId) async {
+  final response = await http.get(
+    Uri.parse('$baseUrl/orders/$orderId'),
+    headers: await getHeaders(token: token),
+  );
+
+  final data = jsonDecode(response.body);
+
+  if (response.statusCode == 200 && data['success']) {
+    return Order.fromJson(data['data']);
+  }
+
+  throw Exception("Failed to load order details");
+}

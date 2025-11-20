@@ -1,0 +1,43 @@
+Future<void> _submitOrder(
+    AuthProvider auth,
+    CartProvider cartProvider,
+    OrderProvider orderProvider,
+) async {
+  setState(() => _isSubmitting = true);
+
+  try {
+    await orderProvider.createOrder(
+      auth.token!,
+      {
+        "name": _nameController.text.trim(),
+        "phone": _phoneController.text.trim(),
+        "address": _addressController.text.trim(),
+        "city": _cityController.text.trim(),
+        "postal_code": _postalController.text.trim(),
+        "payment_method": _paymentMethod,
+      },
+    );
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Order placed successfully!"),
+        backgroundColor: Colors.green,
+      ),
+    );
+
+    Navigator.pop(context);
+  } catch (e) {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text("Failed to place order: $e"),
+        backgroundColor: Colors.red,
+      ),
+    );
+  } finally {
+    if (mounted) setState(() => _isSubmitting = false);
+  }
+}

@@ -1,0 +1,86 @@
+import 'package:flutter/foundation.dart';
+import '../models/auth.dart';
+import '../services/auth_service.dart';
+
+class AuthProvider with ChangeNotifier {
+  User? _user;
+  String? _token;
+  bool _isLoading = false;
+
+  // GETTERS
+  User? get user => _user;
+  String? get token => _token;
+  int? get userId => _user?.userId; // <-- DITAMBAHKAN
+  bool get isLoading => _isLoading;
+  bool get isAuth => _user != null;
+
+  // LOGIN
+  Future<void> login(String email, String password) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final user = await AuthService.login(
+        LoginRequest(email: email, password: password),
+      );
+
+      _user = user;
+      _token = user.token;
+      _isLoading = false;
+
+      notifyListeners();
+    } catch (e) {
+      _isLoading = false;
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  // REGISTER
+  Future<void> register(
+    String name,
+    String email,
+    String password, {
+    String? phoneNumber,
+  }) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final user = await AuthService.register(
+        RegisterRequest(
+          name: name,
+          email: email,
+          password: password,
+          phoneNumber: phoneNumber,
+        ),
+      );
+
+      _user = user;
+      _token = user.token;
+      _isLoading = false;
+
+      notifyListeners();
+    } catch (e) {
+      _isLoading = false;
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  // LOGOUT
+  Future<void> logout() async {
+    if (_token != null) {
+      await AuthService.logout(_token!);
+    }
+
+    _user = null;
+    _token = null;
+    notifyListeners();
+  }
+
+  // AUTO-LOGIN (nanti kita isi pakai shared_preferences)
+  Future<void> checkAuth() async {
+    // TODO: Implement persistent login
+  }
+}

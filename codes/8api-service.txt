@@ -1,0 +1,85 @@
+// -----------------------------
+// GET CART
+// -----------------------------
+static Future<Cart> getCart(String token, int userId) async {
+  final response = await http.get(
+    Uri.parse('$baseUrl/cart/$userId'),
+    headers: await getHeaders(token: token),
+  );
+
+  final data = json.decode(response.body);
+
+  if (response.statusCode == 200 && data['success']) {
+    return Cart.fromJson(data['data']);
+  } else {
+    throw Exception('Failed to load cart');
+  }
+}
+
+// -----------------------------
+// ADD TO CART
+// -----------------------------
+static Future<void> addToCart(
+    String token, int userId, int productId, int qty) async {
+  final response = await http.post(
+    Uri.parse('$baseUrl/cart/$userId/add'),
+    headers: await getHeaders(token: token),
+    body: json.encode({
+      'product_id': productId,
+      'quantity': qty,
+    }),
+  );
+
+  if (response.statusCode != 200) {
+    throw Exception('Failed to add to cart');
+  }
+}
+
+// -----------------------------
+// UPDATE CART ITEM
+// -----------------------------
+static Future<void> updateCartItem(
+    String token, int userId, int productId, int qty) async {
+  final response = await http.put(
+    Uri.parse('$baseUrl/cart/$userId/update'),
+    headers: await getHeaders(token: token),
+    body: json.encode({
+      'product_id': productId,
+      'quantity': qty,
+    }),
+  );
+
+  if (response.statusCode != 200) {
+    throw Exception('Failed to update cart item');
+  }
+}
+
+// -----------------------------
+// REMOVE FROM CART
+// -----------------------------
+static Future<void> removeFromCart(
+    String token, int userId, int productId) async {
+  final response = await http.delete(
+    Uri.parse('$baseUrl/cart/$userId/remove'),
+    headers: await getHeaders(token: token),
+    body: json.encode({'product_id': productId}),
+  );
+
+  if (response.statusCode != 200) {
+    throw Exception('Failed to remove item');
+  }
+}
+
+// -----------------------------
+// CLEAR CART
+// -----------------------------
+static Future<void> clearCart(String token, int userId) async {
+  final response = await http.delete(
+    Uri.parse('$baseUrl/cart/$userId/clear'),
+    headers: await getHeaders(token: token),
+  );
+
+  if (response.statusCode != 200) {
+    throw Exception('Failed to clear cart');
+  }
+}

@@ -1,0 +1,245 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/cart_provider.dart';
+import '../providers/auth_provider.dart';
+import '../providers/order_provider.dart';
+
+class CheckoutScreen extends StatefulWidget {
+  const CheckoutScreen({super.key});
+
+  @override
+  State<CheckoutScreen> createState() => _CheckoutScreenState();
+}
+
+class _CheckoutScreenState extends State<CheckoutScreen> {
+  final _formKey = GlobalKey<FormState>();
+
+  // Form input controllers
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _addressController = TextEditingController();
+  final TextEditingController _cityController = TextEditingController();
+  final TextEditingController _postalController = TextEditingController();
+
+  String _paymentMethod = "cod";
+  bool _isSubmitting = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final cartProvider = Provider.of<CartProvider>(context);
+    final authProvider = Provider.of<AuthProvider>(context);
+    final orderProvider = Provider.of<OrderProvider>(context, listen: false);
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("Checkout"),
+        backgroundColor: Colors.blue,
+        foregroundColor: Colors.white,
+      ),
+      body: cartProvider.cart == null || cartProvider.cart!.items.isEmpty
+          ? const Center(
+              child: Text(
+                "Your cart is empty!",
+                style: TextStyle(fontSize: 18),
+              ),
+            )
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // -----------------------------------------
+                    // SHIPPING INFORMATION
+                    // -----------------------------------------
+                    const Text(
+                      "Shipping Information",
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 12),
+
+                    _buildInput("Full Name", _nameController),
+                    _buildInput("Phone Number", _phoneController,
+                        keyboard: TextInputType.phone),
+                    _buildInput("Address", _addressController),
+                    _buildInput("City", _cityController),
+                    _buildInput("Postal Code", _postalController,
+                        keyboard: TextInputType.number),
+
+                    const SizedBox(height: 24),
+
+                    // -----------------------------------------
+                    // PAYMENT METHOD
+                    // -----------------------------------------
+                    const Text(
+                      "Payment Method",
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 12),
+
+                    _buildPaymentOption("cod", "Cash on Delivery"),
+                    _buildPaymentOption("bank", "Bank Transfer"),
+                    _buildPaymentOption("ewallet", "E-Wallet"),
+
+                    const SizedBox(height: 24),
+
+                    // -----------------------------------------
+                    // ORDER SUMMARY
+                    // -----------------------------------------
+                    const Text(
+                      "Order Summary",
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 12),
+
+                    _buildSummaryRow(
+                        "Items", cartProvider.totalItems.toString()),
+                    _buildSummaryRow("Total Price",
+                        "Rp ${cartProvider.totalPrice.toStringAsFixed(0)}"),
+
+                    const SizedBox(height: 24),
+
+                    // -----------------------------------------
+                    // PLACE ORDER BUTTON
+                    // -----------------------------------------
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                        ),
+                        onPressed: _isSubmitting
+                            ? null
+                            : () async {
+                                if (_formKey.currentState!.validate()) {
+                                  await _submitOrder(
+                                    authProvider,
+                                    cartProvider,
+                                    orderProvider,
+                                  );
+                                }
+                              },
+                        child: _isSubmitting
+                            ? const CircularProgressIndicator(
+                                color: Colors.white,
+                              )
+                            : const Text(
+                                "Place Order",
+                                style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold),
+                              ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+    );
+  }
+
+  // -----------------------------------------
+  // INPUT FIELD WIDGET
+  // -----------------------------------------
+  Widget _buildInput(String label, TextEditingController controller,
+      {TextInputType keyboard = TextInputType.text}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: TextFormField(
+        controller: controller,
+        keyboardType: keyboard,
+        validator: (value) =>
+            value == null || value.isEmpty ? "Required" : null,
+        decoration: InputDecoration(
+          labelText: label,
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      ),
+    );
+  }
+
+  // -----------------------------------------
+  // PAYMENT OPTION (RADIO STYLE)
+  // -----------------------------------------
+  Widget _buildPaymentOption(String value, String label) {
+    return RadioListTile(
+      value: value,
+      groupValue: _paymentMethod,
+      title: Text(label),
+      onChanged: (val) {
+        setState(() => _paymentMethod = val.toString());
+      },
+    );
+  }
+
+  // -----------------------------------------
+  // SUMMARY ROW (LABEL – VALUE)
+  // -----------------------------------------
+  Widget _buildSummaryRow(String title, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Text(title, style: const TextStyle(fontSize: 16)),
+          const Spacer(),
+          Text(
+            value,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // -----------------------------------------
+  // SUBMIT ORDER FUNCTION
+  // -----------------------------------------
+  Future<void> _submitOrder(
+    AuthProvider auth,
+    CartProvider cartProvider,
+    OrderProvider orderProvider,
+  ) async {
+    setState(() => _isSubmitting = true);
+
+    try {
+      await orderProvider.createOrder(
+        auth.token!,
+        {
+          "name": _nameController.text.trim(),
+          "phone": _phoneController.text.trim(),
+          "address": _addressController.text.trim(),
+          "city": _cityController.text.trim(),
+          "postal_code": _postalController.text.trim(),
+          "payment_method": _paymentMethod,
+        },
+      );
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Order placed successfully!"),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      Navigator.pop(context);
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Failed to place order: $e"),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
+  }
+}

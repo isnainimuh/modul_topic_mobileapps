@@ -1,0 +1,217 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/cart_provider.dart';
+import '../providers/auth_provider.dart';
+import '../models/cart.dart';
+
+class CartScreen extends StatefulWidget {
+  const CartScreen({super.key});
+
+  @override
+  State<CartScreen> createState() => _CartScreenState();
+}
+
+class _CartScreenState extends State<CartScreen> {
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCart();
+  }
+
+  Future<void> _loadCart() async {
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final cartProvider = Provider.of<CartProvider>(context, listen: false);
+
+    if (auth.userId == null || auth.token == null) {
+      setState(() => _loading = false);
+      return;
+    }
+
+    await cartProvider.fetchCart(auth.token!, auth.userId!);
+
+    if (mounted) {
+      setState(() => _loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cartProvider = Provider.of<CartProvider>(context);
+    final auth = Provider.of<AuthProvider>(context);
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("My Cart"),
+        backgroundColor: Colors.blue,
+        foregroundColor: Colors.white,
+      ),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : cartProvider.cart == null || cartProvider.cart!.items.isEmpty
+              ? const Center(
+                  child: Text(
+                    "Your cart is empty",
+                    style: TextStyle(fontSize: 18),
+                  ),
+                )
+              : Column(
+                  children: [
+                    Expanded(
+                      child: ListView.builder(
+                        padding: const EdgeInsets.all(12),
+                        itemCount: cartProvider.cart!.items.length,
+                        itemBuilder: (context, index) {
+                          final item = cartProvider.cart!.items[index];
+                          return _buildCartItem(item, auth, cartProvider);
+                        },
+                      ),
+                    ),
+
+                    // TOTAL PANEL
+                    _buildTotalPanel(cartProvider),
+                  ],
+                ),
+    );
+  }
+
+  // ----------------------------------------------
+  // CART ITEM CARD
+  // ----------------------------------------------
+  Widget _buildCartItem(
+      CartItem item, AuthProvider auth, CartProvider cartProvider) {
+    final img = item.product.images.isNotEmpty
+        ? item.product.images.first.imageUrl
+        : "https://via.placeholder.com/150";
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        children: [
+          // IMAGE
+          Container(
+            width: 90,
+            height: 90,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              image: DecorationImage(
+                image: NetworkImage(img),
+                fit: BoxFit.cover,
+              ),
+            ),
+            margin: const EdgeInsets.all(10),
+          ),
+
+          // NAME + PRICE + CONTROLS
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item.product.productName,
+                  style: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  "Rp ${item.product.price.toStringAsFixed(0)}",
+                  style: const TextStyle(
+                      color: Colors.blue, fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 8),
+
+                // Quantity Controls
+                Row(
+                  children: [
+                    // MINUS
+                    IconButton(
+                      icon: const Icon(Icons.remove_circle_outline),
+                      onPressed: item.quantity > 1
+                          ? () => cartProvider.updateCartItem(auth.token!,
+                              auth.userId!, item.productId, item.quantity - 1)
+                          : null,
+                    ),
+
+                    Text(
+                      item.quantity.toString(),
+                      style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+
+                    // PLUS
+                    IconButton(
+                      icon: const Icon(Icons.add_circle_outline),
+                      onPressed: () => cartProvider.updateCartItem(auth.token!,
+                          auth.userId!, item.productId, item.quantity + 1),
+                    ),
+
+                    const Spacer(),
+
+                    // DELETE BUTTON
+                    IconButton(
+                      icon: const Icon(Icons.delete, color: Colors.red),
+                      onPressed: () => cartProvider.removeFromCart(
+                          auth.token!, auth.userId!, item.productId),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ----------------------------------------------
+  // TOTAL PRICE PANEL
+  // ----------------------------------------------
+  Widget _buildTotalPanel(CartProvider cartProvider) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border(
+          top: BorderSide(color: Colors.grey.shade300),
+        ),
+      ),
+      child: Row(
+        children: [
+          // TOTAL PRICE
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                "Total:",
+                style: TextStyle(fontSize: 14),
+              ),
+              Text(
+                "Rp ${cartProvider.totalPrice.toStringAsFixed(0)}",
+                style:
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+
+          const Spacer(),
+
+          // CHECKOUT BUTTON
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blue,
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+            ),
+            onPressed: () {
+              Navigator.pushNamed(context, '/checkout');
+            },
+            child: const Text(
+              "Checkout",
+              style:
+                  TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
