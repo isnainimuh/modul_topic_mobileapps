@@ -1,0 +1,162 @@
+import 'package:flutter/material.dart';
+import '../widgets/product_card.dart';
+import '../providers/product_provider.dart';
+import 'package:provider/provider.dart';
+
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
+
+  @override
+  _HomeScreenState createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadInitialData();
+  }
+
+  Future<void> _loadInitialData() async {
+    try {
+      final provider = Provider.of<ProductProvider>(context, listen: false);
+
+      await provider.fetchProducts();
+      await provider.fetchCategories();
+
+      setState(() => _isLoading = false);
+    } catch (e) {
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error: $e")),
+      );
+    }
+  }
+
+  Future<void> _loadProducts() async {
+    try {
+      await Provider.of<ProductProvider>(context, listen: false)
+          .fetchProducts();
+
+      if (!mounted) return; // <-- penting
+      setState(() => _isLoading = false);
+    } catch (e) {
+      if (!mounted) return; // <-- penting
+      setState(() => _isLoading = false);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error loading products: $e')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final productProvider = Provider.of<ProductProvider>(context);
+    final categories = productProvider.categories;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('E-Commerce Mobile'),
+        backgroundColor: Colors.blue,
+        foregroundColor: Colors.white,
+      ),
+      body: Column(
+        children: [
+          // 🔍 SEARCH BAR
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: TextField(
+              decoration: InputDecoration(
+                hintText: "Search products...",
+                prefixIcon: const Icon(Icons.search),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              onChanged: (value) {
+                productProvider.setSearchQuery(value);
+                productProvider.applyFilters();
+              },
+            ),
+          ),
+
+          // 🟦 CATEGORY FILTER CHIPS
+          if (!_isLoading)
+            SizedBox(
+              height: 48,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                children: [
+                  // Chip ALL
+                  ChoiceChip(
+                    label: const Text("All"),
+                    selected: productProvider.selectedCategoryId == null,
+                    onSelected: (_) {
+                      productProvider.setSelectedCategory(null);
+                      productProvider.applyFilters();
+                    },
+                  ),
+                  const SizedBox(width: 8),
+
+                  // Chip kategori dari API
+                  ...categories.map((c) {
+                    final bool isSelected =
+                        productProvider.selectedCategoryId == c.categoryId;
+
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: ChoiceChip(
+                        label: Text(c.name),
+                        selected: isSelected,
+                        onSelected: (_) {
+                          productProvider.setSelectedCategory(c.categoryId);
+                          productProvider.applyFilters();
+                        },
+                      ),
+                    );
+                  }),
+                ],
+              ),
+            ),
+
+          const SizedBox(height: 8),
+
+          // 🔄 LOADING
+          if (_isLoading)
+            const Expanded(
+              child: Center(child: CircularProgressIndicator()),
+            )
+
+          // ❌ NO PRODUCTS
+          else if (productProvider.filteredProducts.isEmpty)
+            const Expanded(
+              child: Center(child: Text("No products available")),
+            )
+
+          // 🟦 PRODUCT GRID
+          else
+            Expanded(
+              child: GridView.builder(
+                padding: const EdgeInsets.all(8),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 8,
+                  mainAxisSpacing: 8,
+                  childAspectRatio: 0.7,
+                ),
+                itemCount: productProvider.filteredProducts.length,
+                itemBuilder: (context, index) {
+                  final product = productProvider.filteredProducts[index];
+                  return ProductCard(product: product);
+                },
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}

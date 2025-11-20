@@ -1,0 +1,108 @@
+import 'package:flutter/material.dart';
+import '../widgets/product_card.dart';
+import '../providers/product_provider.dart';
+import 'package:provider/provider.dart';
+
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
+
+  @override
+  _HomeScreenState createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProducts();
+  }
+
+  Future<void> _loadProducts() async {
+    try {
+      await Provider.of<ProductProvider>(context, listen: false)
+          .fetchProducts();
+      setState(() {
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error loading products: $e')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final productProvider = Provider.of<ProductProvider>(context);
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('E-Commerce Mobile'),
+        backgroundColor: Colors.blue,
+        foregroundColor: Colors.white,
+      ),
+
+      // 🔍 SEARCH BAR
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: TextField(
+              decoration: InputDecoration(
+                hintText: "Search products...",
+                prefixIcon: const Icon(Icons.search),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              onChanged: (value) {
+                productProvider.setSearchQuery(value);
+                productProvider.applyFilters();
+              },
+            ),
+          ),
+
+          // 🔄 Jika sedang loading
+          if (_isLoading)
+            const Expanded(
+              child: Center(child: CircularProgressIndicator()),
+            )
+
+          // ❌ Jika tidak ada produk
+          else if (productProvider.filteredProducts.isEmpty)
+            const Expanded(
+              child: Center(child: Text('No products available')),
+            )
+
+          // 🟦 GridView produk
+          else
+            Expanded(
+              child: GridView.builder(
+                padding: const EdgeInsets.all(8),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 8,
+                  mainAxisSpacing: 8,
+                  childAspectRatio: 0.7,
+                ),
+
+                // JANGAN PAKAI products.length — HARUS filteredProducts
+                itemCount: productProvider.filteredProducts.length,
+
+                itemBuilder: (context, index) {
+                  final product = productProvider.filteredProducts[index];
+
+                  return ProductCard(product: product);
+                },
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}

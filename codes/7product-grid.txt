@@ -1,0 +1,120 @@
+import 'package:flutter/material.dart';
+import '../models/product.dart';
+
+class ProductGridItem extends StatelessWidget {
+  final Product product;
+  final VoidCallback onTap;
+
+  const ProductGridItem({
+    super.key,
+    required this.product,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 2,
+      margin: const EdgeInsets.all(4),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Product Image
+            Container(
+              height: 120,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(8),
+                  topRight: Radius.circular(8),
+                ),
+                image: DecorationImage(
+                  image: NetworkImage(
+                    product.images.isNotEmpty
+                        ? product.images[0].imageUrl
+                        : 'https://via.placeholder.com/150/CCCCCC/FFFFFF?text=No+Image',
+                  ),
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
+
+            // Product Details
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Product Name
+                  Text(
+                    product.productName,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+
+                  const SizedBox(height: 4),
+
+                  // Product Price
+                  Text(
+                    'Rp ${product.price.toStringAsFixed(0)}',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: Theme.of(context).primaryColor,
+                    ),
+                  ),
+
+                  const SizedBox(height: 4),
+
+                  // Category
+                  Text(
+                    product.category.name,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey,
+                    ),
+                  ),
+
+                  const SizedBox(height: 4),
+
+                  // Stock
+                  Text(
+                    'Stok: ${product.stockQuantity}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color:
+                          product.stockQuantity > 0 ? Colors.green : Colors.red,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+
+                  // Optional description
+                  if (product.description.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                        product.description,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

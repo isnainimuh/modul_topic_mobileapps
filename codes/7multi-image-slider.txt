@@ -1,0 +1,62 @@
+import 'package:carousel_slider/carousel_slider.dart';
+import 'package:flutter/material.dart';
+
+class MultiImageSlider extends StatefulWidget {
+  final List<String> imageUrls;
+
+  const MultiImageSlider({super.key, required this.imageUrls});
+
+  @override
+  State<MultiImageSlider> createState() => _MultiImageSliderState();
+}
+
+class _MultiImageSliderState extends State<MultiImageSlider> {
+  int _current = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.imageUrls.isEmpty) {
+      return Image.asset('assets/images/placeholder.png',
+          fit: BoxFit.cover, width: double.infinity);
+    }
+
+    return Column(
+      children: [
+        CarouselSlider(
+          items: widget.imageUrls.map((url) {
+            return Image.network(
+              url,
+              width: double.infinity,
+              fit: BoxFit.cover,
+            );
+          }).toList(),
+          options: CarouselOptions(
+            height: 300,
+            autoPlay: false,
+            enlargeCenterPage: false,
+            viewportFraction: 1,
+            onPageChanged: (index, reason) {
+              setState(() => _current = index);
+            },
+          ),
+        ),
+        const SizedBox(height: 10),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: widget.imageUrls.asMap().entries.map((entry) {
+            return Container(
+              width: 8,
+              height: 8,
+              margin: const EdgeInsets.symmetric(horizontal: 4),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color:
+                    _current == entry.key ? Colors.blue : Colors.grey.shade400,
+              ),
+            );
+          }).toList(),
+        )
+      ],
+    );
+  }
+}

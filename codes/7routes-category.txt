@@ -1,0 +1,8 @@
+use App\Http\Controllers\CategoryController;
+
+Route::prefix('categories')->group(function () {
+    Route::get('/', [CategoryController::class, 'index']);   // ⭐ Tambahkan ini
+
+    // GET /api/categories/{id}/products
+    Route::get('/{id}/products', [ProductController::class, 'getByCategory']);
+});
